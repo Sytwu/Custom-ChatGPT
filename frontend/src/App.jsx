@@ -1,7 +1,8 @@
 import React from "react";
 import { AppProvider } from "./context/AppContext.jsx";
-import { Sidebar } from "./components/layout/Sidebar.jsx";
+import { ConversationSidebar } from "./components/layout/ConversationSidebar.jsx";
 import { ChatArea } from "./components/layout/ChatArea.jsx";
+import { SettingsSidebar } from "./components/layout/SettingsSidebar.jsx";
 
 export default function App() {
   return (
@@ -11,8 +12,9 @@ export default function App() {
           <h1>Custom ChatGPT</h1>
         </header>
         <div className="app-body">
-          <Sidebar />
+          <ConversationSidebar />
           <ChatArea />
+          <SettingsSidebar />
         </div>
       </div>
     </AppProvider>

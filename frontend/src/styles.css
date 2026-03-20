@@ -372,6 +372,125 @@ hr { border: none; border-top: 1px solid var(--border); }
   line-height: 1;
 }
 
+/* ── Settings Sidebar (right) ──────────────────────────────────── */
+.settings-sidebar {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+.settings-sidebar .sidebar-header {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.settings-sidebar .sidebar-header h2 {
+  flex: 1;
+  text-align: left;
+}
+
+/* ── Conversation Sidebar (left) ───────────────────────────────── */
+.conv-sidebar-content {
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.new-chat-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.new-chat-btn:hover:not(:disabled) { background: var(--accent-hover); }
+.new-chat-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.conv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.conv-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.conv-item:hover { background: var(--surface2); }
+.conv-item.active {
+  background: var(--surface2);
+  border-left: 3px solid var(--accent);
+  padding-left: 7px;
+}
+
+.conv-item-title {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  display: block;
+}
+
+.conv-item-date {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── API Key Inputs ─────────────────────────────────────────────── */
+.api-key-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.api-key-row input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 6px 8px;
+  font-size: 13px;
+  outline: none;
+  font-family: monospace;
+  min-width: 0;
+}
+.api-key-row input:focus { border-color: var(--accent); }
+
+.eye-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 7px;
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.eye-btn:hover { border-color: var(--accent); color: var(--text); }
+
 /* ── Scrollbar ─────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

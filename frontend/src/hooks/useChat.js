@@ -1,5 +1,15 @@
 import { useAppContext } from "./useAppContext.js";
 import { ACTIONS } from "../context/actions.js";
+import { getActiveMessages } from "../context/reducer.js";
+
+const NVIDIA_PREFIXES = [
+  "nvidia/", "meta/", "mistralai/", "google/", "microsoft/",
+  "deepseek-ai/", "qwen/", "moonshotai/",
+];
+
+function isNvidiaModel(modelId) {
+  return NVIDIA_PREFIXES.some((prefix) => modelId.startsWith(prefix));
+}
 
 /**
  * Trim the message history to respect the memoryCutoff.
@@ -8,7 +18,6 @@ import { ACTIONS } from "../context/actions.js";
  */
 function applyMemoryCutoff(messages, memoryEnabled, memoryCutoff) {
   if (!memoryEnabled) {
-    // Send only the current (last) user message
     return [messages[messages.length - 1]];
   }
   const maxMessages = memoryCutoff * 2;
@@ -22,36 +31,47 @@ export function useChat() {
   async function sendMessage(text) {
     if (!text.trim() || state.isStreaming) return;
 
-    // 1. Add user message to state
-    dispatch({ type: ACTIONS.ADD_USER_MESSAGE, payload: text.trim() });
+    const trimmedText = text.trim();
 
-    // 2. Build the trimmed message list for the request.
-    //    Note: ADD_USER_MESSAGE hasn't updated state.messages yet (React batches),
+    // 1. Add user message to active conversation
+    dispatch({ type: ACTIONS.ADD_USER_MESSAGE, payload: trimmedText });
+
+    // 2. Auto-title: set title from first message if conversation is currently "New Chat"
+    const activeMessages = getActiveMessages(state);
+    if (activeMessages.length === 0) {
+      const title = trimmedText.slice(0, 35) + (trimmedText.length > 35 ? "…" : "");
+      dispatch({ type: ACTIONS.SET_TITLE, payload: title });
+    }
+
+    // 3. Build the message list for the request.
+    //    ADD_USER_MESSAGE hasn't updated state yet (React batches),
     //    so we manually append the new message here.
     const allMessages = [
-      ...state.messages,
-      { role: "user", content: text.trim() },
+      ...activeMessages,
+      { role: "user", content: trimmedText },
     ];
-    const trimmedMessages = applyMemoryCutoff(
-      allMessages,
-      state.memoryEnabled,
-      state.memoryCutoff
-    );
+    const trimmedMessages = applyMemoryCutoff(allMessages, state.memoryEnabled, state.memoryCutoff);
 
-    // 3. Start streaming
+    // 4. Determine the right API key for the selected model
+    const apiKey = isNvidiaModel(state.model) ? state.nvidiaApiKey : state.groqApiKey;
+
+    // 5. Start streaming
     dispatch({ type: ACTIONS.START_STREAM });
 
     try {
+      const body = {
+        model: state.model,
+        systemPrompt: state.systemPrompt,
+        messages: trimmedMessages,
+        temperature: state.temperature,
+        maxTokens: state.maxTokens,
+      };
+      if (apiKey) body.apiKey = apiKey;
+
       const response = await fetch("/api/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: state.model,
-          systemPrompt: state.systemPrompt,
-          messages: trimmedMessages,
-          temperature: state.temperature,
-          maxTokens: state.maxTokens,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -60,7 +80,7 @@ export function useChat() {
         return;
       }
 
-      // 4. Read the SSE stream via fetch ReadableStream
+      // 6. Read the SSE stream via fetch ReadableStream
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
@@ -71,7 +91,7 @@ export function useChat() {
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
-        buffer = lines.pop(); // keep the last (possibly incomplete) line
+        buffer = lines.pop();
 
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
@@ -97,7 +117,6 @@ export function useChat() {
         }
       }
 
-      // Stream ended without [DONE] — finish anyway
       dispatch({ type: ACTIONS.FINISH_STREAM });
     } catch (err) {
       dispatch({ type: ACTIONS.STREAM_ERROR, payload: err.message ?? "Network error" });

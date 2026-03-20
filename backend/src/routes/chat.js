@@ -4,7 +4,7 @@ import { streamChat } from "../services/llm.js";
 const router = Router();
 
 router.post("/stream", async (req, res, next) => {
-  const { model, systemPrompt, messages, temperature = 0.7, maxTokens = 1024 } = req.body;
+  const { model, systemPrompt, messages, temperature = 0.7, maxTokens = 1024, apiKey } = req.body;
 
   if (!model) {
     return res.status(400).json({ error: "model is required" });
@@ -13,12 +13,27 @@ router.post("/stream", async (req, res, next) => {
     return res.status(400).json({ error: "messages array is required" });
   }
 
-  // Build the full message list: system prompt + conversation history
+  // Some models (e.g. Gemma) don't support the system role —
+  // prepend the system prompt to the first user message instead.
+  const noSystemRole = model.startsWith("google/gemma");
+  const cleanMessages = messages.map(({ role, content }) => ({ role, content }));
+
   const fullMessages = [];
   if (systemPrompt && systemPrompt.trim()) {
-    fullMessages.push({ role: "system", content: systemPrompt.trim() });
+    if (noSystemRole) {
+      // Inject system prompt as a prefix on the first user message
+      const firstUser = cleanMessages.findIndex((m) => m.role === "user");
+      if (firstUser !== -1) {
+        cleanMessages[firstUser] = {
+          role: "user",
+          content: `[System: ${systemPrompt.trim()}]\n\n${cleanMessages[firstUser].content}`,
+        };
+      }
+    } else {
+      fullMessages.push({ role: "system", content: systemPrompt.trim() });
+    }
   }
-  fullMessages.push(...messages);
+  fullMessages.push(...cleanMessages);
 
   // Set SSE headers
   res.setHeader("Content-Type", "text/event-stream");
@@ -28,12 +43,12 @@ router.post("/stream", async (req, res, next) => {
 
   // Clean up if the client disconnects mid-stream
   let done = false;
-  req.on("close", () => {
+  res.on("close", () => {
     done = true;
   });
 
   try {
-    const stream = await streamChat(fullMessages, model, temperature, maxTokens);
+    const stream = await streamChat(fullMessages, model, temperature, maxTokens, apiKey);
 
     for await (const chunk of stream) {
       if (done) break;
