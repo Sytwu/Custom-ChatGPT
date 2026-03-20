@@ -2,19 +2,36 @@ schema: spec-driven
 
 # Project context (optional)
 # This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Project: Custom-ChatGPT — a full-stack AI chat web app (NYCU Intro GenAI Spring 2026 course project)
+
+  Tech stack:
+  - Backend: Node.js (ES modules), Express, Groq SDK, OpenAI SDK (for NVIDIA NIM), dotenv
+  - Frontend: React 18, Vite, React Context + useReducer (no Redux), react-markdown, highlight.js, pdfjs-dist
+  - Deployment: Docker Compose (local), Render (backend), Vercel (frontend)
+  - No database — all state in React memory + localStorage
+
+  Architecture:
+  - Streaming via SSE: backend sends `data: {delta}\n\n`, ends with `data: [DONE]\n\n`
+  - Frontend reads SSE with fetch + ReadableStream (NOT EventSource)
+  - Model routing in backend/src/services/llm.js by model ID prefix (nvidia/, meta/, mistralai/, etc. → NVIDIA NIM; else → Groq)
+  - All frontend state in a single AppContext (context/reducer.js); persisted to localStorage via services/storage.js
+  - API keys can be supplied per-request from the client or from server env vars (runtime key takes priority)
+  - Memory cutoff: useChat.js sends only the last N*2 messages to the API (configurable, system prompt always included)
+
+  Conventions:
+  - ES modules (import/export) everywhere — no CommonJS require()
+  - React functional components only, no class components
+  - Action types defined as constants in context/actions.js (ACTIONS object)
+  - Environment variables: GROQ_API_KEY, NVIDIA_API_KEY, PORT, ALLOWED_ORIGINS (backend); VITE_API_URL (frontend)
+  - google/gemma models: system prompt is prepended to first user message (no system role support)
+  - File attachments: stored as {attachmentName, attachmentText} on message; apiContent() in reducer expands them
 
 # Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Keep proposals focused on user-visible behaviour; reference existing architecture where it applies
+    - Include a "Non-goals" section to bound scope
+  tasks:
+    - Reference specific file paths (e.g. backend/src/services/llm.js) so tasks are immediately actionable
+    - Keep each task independently executable; no task should depend on unstaged work from another
