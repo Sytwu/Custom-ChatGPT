@@ -7,12 +7,10 @@ const config = {
 };
 
 if (!config.groqApiKey) {
-  console.error("ERROR: GROQ_API_KEY is not set in .env");
-  process.exit(1);
+  console.warn("WARN: GROQ_API_KEY is not set — must be supplied per-request via Settings");
 }
 if (!config.nvidiaApiKey) {
-  console.error("ERROR: NVIDIA_API_KEY is not set in .env");
-  process.exit(1);
+  console.warn("WARN: NVIDIA_API_KEY is not set — must be supplied per-request via Settings");
 }
 
 export default config;

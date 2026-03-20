@@ -4,17 +4,21 @@ export const MODELS = [
     models: [
       { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
       { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B (Fast)" },
-      { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B" },
-      { id: "gemma2-9b-it", label: "Gemma 2 9B" },
+      { id: "meta-llama/llama-4-scout-17b-16e-instruct", label: "Llama 4 Scout 17B" },
+      { id: "qwen/qwen3-32b", label: "Qwen3 32B" },
     ],
   },
   {
     group: "NVIDIA NIM",
     models: [
-      { id: "nvidia/llama-3.1-nemotron-70b-instruct", label: "Nemotron 70B" },
-      { id: "meta/llama-3.1-405b-instruct", label: "Llama 3.1 405B" },
-      { id: "mistralai/mistral-large-2-instruct", label: "Mistral Large 2" },
+      { id: "meta/llama-3.3-70b-instruct", label: "Llama 3.3 70B" },
+      { id: "nvidia/llama-3.3-nemotron-super-49b-v1", label: "Nemotron Super 49B" },
+      { id: "nvidia/llama-3.1-nemotron-nano-8b-v1", label: "Nemotron Nano 8B" },
+      { id: "mistralai/mistral-small-24b-instruct", label: "Mistral Small 24B" },
       { id: "google/gemma-2-27b-it", label: "Gemma 2 27B" },
+      { id: "deepseek-ai/deepseek-v3.1", label: "DeepSeek V3.1" },
+      { id: "qwen/qwq-32b", label: "QwQ 32B (Reasoning)" },
+      { id: "moonshotai/kimi-k2-instruct", label: "Kimi K2" },
     ],
   },
 ];

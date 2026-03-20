@@ -12,6 +12,19 @@ function makeConversation(model) {
     messages: [],
     createdAt: Date.now(),
     model,
+    color: null,
+    groupId: null,
+  };
+}
+
+function makeGroup(name, color = null) {
+  return {
+    id: makeId(),
+    name,
+    color,
+    collapsed: false,
+    ragEnabled: false,
+    createdAt: Date.now(),
   };
 }
 
@@ -31,6 +44,7 @@ export const initialState = {
   // Multi-conversation
   conversations: [],
   activeConversationId: null,
+  groups: [],
 
   // Streaming
   isStreaming: false,
@@ -44,6 +58,17 @@ export const initialState = {
 export function getActiveMessages(state) {
   const conv = state.conversations.find((c) => c.id === state.activeConversationId);
   return conv?.messages ?? [];
+}
+
+/**
+ * Build the content string to send to the LLM API.
+ * For user messages with an attachment, appends the file text block.
+ */
+export function apiContent(msg) {
+  if (msg.role === "user" && msg.attachmentText) {
+    return `${msg.content}\n\n--- 附件：${msg.attachmentName} ---\n${msg.attachmentText}\n---`;
+  }
+  return msg.content;
 }
 
 function updateActiveMessages(state, updater) {
@@ -107,19 +132,54 @@ export function reducer(state, action) {
         error: null,
       };
 
-    case ACTIONS.SET_TITLE:
+    case ACTIONS.SET_TITLE: {
+      // Don't overwrite a title the user has manually set
+      const target = state.conversations.find((c) => c.id === state.activeConversationId);
+      if (target?.titleLocked) return state;
       return {
         ...state,
         conversations: state.conversations.map((c) =>
           c.id === state.activeConversationId ? { ...c, title: action.payload } : c
         ),
       };
+    }
+
+    case ACTIONS.DELETE_CONVERSATION: {
+      const remaining = state.conversations.filter((c) => c.id !== action.payload);
+      if (remaining.length === 0) {
+        const fresh = makeConversation(state.model);
+        return { ...state, conversations: [fresh], activeConversationId: fresh.id };
+      }
+      const newActive =
+        state.activeConversationId === action.payload
+          ? remaining[0].id
+          : state.activeConversationId;
+      return { ...state, conversations: remaining, activeConversationId: newActive };
+    }
+
+    case ACTIONS.RENAME_CONVERSATION:
+      return {
+        ...state,
+        conversations: state.conversations.map((c) =>
+          c.id === action.payload.id
+            ? { ...c, title: action.payload.title, titleLocked: true }
+            : c
+        ),
+      };
 
     // ── Messaging ────────────────────────────────────────────────────
+    // payload: { content, attachmentName?, attachmentText? }
     case ACTIONS.ADD_USER_MESSAGE:
       return updateActiveMessages(state, (msgs) => [
         ...msgs,
-        { id: makeId(), role: "user", content: action.payload, timestamp: Date.now() },
+        {
+          id: makeId(),
+          role: "user",
+          content: action.payload.content,
+          attachmentName: action.payload.attachmentName ?? null,
+          attachmentText: action.payload.attachmentText ?? null,
+          timestamp: Date.now(),
+        },
       ]);
 
     case ACTIONS.START_STREAM:
@@ -165,8 +225,75 @@ export function reducer(state, action) {
         memoryCutoff: p.memoryCutoff ?? state.memoryCutoff,
         conversations,
         activeConversationId: activeId,
+        groups: p.groups ?? [],
       };
     }
+
+    // ── Conversation colour ───────────────────────────────────────────
+    case ACTIONS.SET_CONVERSATION_COLOR:
+      return {
+        ...state,
+        conversations: state.conversations.map((c) =>
+          c.id === action.payload.id ? { ...c, color: action.payload.color } : c
+        ),
+      };
+
+    // ── Groups ────────────────────────────────────────────────────────
+    case ACTIONS.CREATE_GROUP: {
+      const group = makeGroup(action.payload.name, action.payload.color ?? null);
+      return { ...state, groups: [...state.groups, group] };
+    }
+
+    case ACTIONS.RENAME_GROUP:
+      return {
+        ...state,
+        groups: state.groups.map((g) =>
+          g.id === action.payload.id ? { ...g, name: action.payload.name } : g
+        ),
+      };
+
+    case ACTIONS.SET_GROUP_COLOR:
+      return {
+        ...state,
+        groups: state.groups.map((g) =>
+          g.id === action.payload.id ? { ...g, color: action.payload.color } : g
+        ),
+      };
+
+    case ACTIONS.DELETE_GROUP:
+      return {
+        ...state,
+        groups: state.groups.filter((g) => g.id !== action.payload),
+        conversations: state.conversations.map((c) =>
+          c.groupId === action.payload ? { ...c, groupId: null } : c
+        ),
+      };
+
+    case ACTIONS.TOGGLE_GROUP_COLLAPSED:
+      return {
+        ...state,
+        groups: state.groups.map((g) =>
+          g.id === action.payload ? { ...g, collapsed: !g.collapsed } : g
+        ),
+      };
+
+    case ACTIONS.MOVE_CONVERSATION_TO_GROUP:
+      return {
+        ...state,
+        conversations: state.conversations.map((c) =>
+          c.id === action.payload.convId
+            ? { ...c, groupId: action.payload.groupId ?? null }
+            : c
+        ),
+      };
+
+    case ACTIONS.TOGGLE_GROUP_RAG:
+      return {
+        ...state,
+        groups: state.groups.map((g) =>
+          g.id === action.payload ? { ...g, ragEnabled: !g.ragEnabled } : g
+        ),
+      };
 
     // ── UI ────────────────────────────────────────────────────────────
     case ACTIONS.CLEAR_ERROR:

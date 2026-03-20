@@ -442,7 +442,8 @@ hr { border: none; border-top: 1px solid var(--border); }
 .conv-item:hover { background: var(--surface2); }
 .conv-item.active {
   background: var(--surface2);
-  border-left: 3px solid var(--accent);
+  /* colour border is set via inline style; fallback to accent when no colour */
+  border-left-color: var(--accent);
   padding-left: 7px;
 }
 
@@ -537,6 +538,152 @@ hr { border: none; border-top: 1px solid var(--border); }
   outline: none;
   font-family: inherit;
 }
+
+/* ── Sidebar top buttons ────────────────────────────────────────── */
+.sidebar-top-btns {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.sidebar-top-btns .new-chat-btn { flex: 1; margin-bottom: 0; }
+
+.new-group-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.new-group-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+.new-group-input-row {
+  margin-bottom: 8px;
+}
+
+/* ── Group folder ────────────────────────────────────────────────── */
+.group-wrapper {
+  margin-bottom: 4px;
+}
+
+.group-row-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: default;
+  position: relative;
+  user-select: none;
+  transition: background 0.15s;
+}
+.group-row-header:hover { background: var(--surface2); }
+.group-row-header.drag-over { background: var(--accent); opacity: 0.8; }
+
+.group-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.group-collapse-btn:hover { color: var(--text); }
+
+.group-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.group-rename-input { margin-left: 0; }
+
+.group-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.rag-badge {
+  font-size: 9px;
+  font-weight: 700;
+  background: var(--accent);
+  color: white;
+  border-radius: 3px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+
+.group-children {
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+  margin-left: 10px;
+}
+
+.group-confirm {
+  background: var(--surface2);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Root drop zone ──────────────────────────────────────────────── */
+.root-drop-zone {
+  min-height: 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.root-drop-zone.drag-over {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  outline: 1px dashed var(--accent);
+}
+
+/* ── Colour picker popover ───────────────────────────────────────── */
+.color-picker-popover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 200;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.color-picker {
+  display: grid;
+  grid-template-columns: repeat(5, 24px);
+  gap: 4px;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: var(--surface2);
+  transition: transform 0.1s, border-color 0.1s;
+}
+.color-swatch:hover { transform: scale(1.2); }
+.color-swatch.selected { border-color: white; }
+.color-none-icon { color: var(--text-muted); line-height: 1; }
 
 /* ── API Key Inputs ─────────────────────────────────────────────── */
 .api-key-row {

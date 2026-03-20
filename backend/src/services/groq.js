@@ -1,16 +1,13 @@
 import Groq from "groq-sdk";
 import config from "../config.js";
 
-const client = new Groq({ apiKey: config.groqApiKey });
+const defaultClient = config.groqApiKey ? new Groq({ apiKey: config.groqApiKey }) : null;
 
-/**
- * Returns an async iterable of content delta strings.
- * @param {object[]} messages - Full messages array including system message
- * @param {string} model
- * @param {number} temperature
- * @param {number} maxTokens
- */
-export async function streamChat(messages, model, temperature, maxTokens) {
+export async function streamChat(messages, model, temperature, maxTokens, apiKey) {
+  const client = apiKey ? new Groq({ apiKey }) : defaultClient;
+  if (!client) {
+    throw new Error("No Groq API key available. Please add your Groq API key in Settings.");
+  }
   const stream = await client.chat.completions.create({
     model,
     messages,

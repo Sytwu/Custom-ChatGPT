@@ -10,6 +10,8 @@ import {
   saveConversations,
   loadActiveId,
   saveActiveId,
+  loadGroups,
+  saveGroups,
 } from "../services/storage.js";
 
 export const AppContext = createContext(null);
@@ -23,9 +25,10 @@ export function AppProvider({ children }) {
     const { groqApiKey, nvidiaApiKey } = loadApiKeys();
     const conversations = loadConversations();
     const activeConversationId = loadActiveId();
+    const groups = loadGroups();
     dispatch({
       type: ACTIONS.LOAD_STATE,
-      payload: { ...settings, groqApiKey, nvidiaApiKey, conversations, activeConversationId },
+      payload: { ...settings, groqApiKey, nvidiaApiKey, conversations, activeConversationId, groups },
     });
   }, []);
 
@@ -57,6 +60,13 @@ export function AppProvider({ children }) {
   useEffect(() => {
     saveActiveId(state.activeConversationId);
   }, [state.activeConversationId]);
+
+  // Persist groups
+  useEffect(() => {
+    if (!state.isStreaming) {
+      saveGroups(state.groups);
+    }
+  }, [state.groups, state.isStreaming]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
