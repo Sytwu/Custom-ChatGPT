@@ -5,7 +5,7 @@ function makeId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function makeConversation(model) {
+function makeConversation(model, discordMode = false) {
   return {
     id: makeId(),
     title: "New Chat",
@@ -14,6 +14,7 @@ function makeConversation(model) {
     model,
     color: null,
     groupId: null,
+    discordMode,
   };
 }
 
@@ -68,16 +69,25 @@ export function getActiveMessages(state) {
  * For user messages with a text attachment, appends the file text block.
  */
 export function apiContent(msg) {
+  const reactionsSuffix =
+    msg.reactions && Object.keys(msg.reactions).length > 0
+      ? "\n[Reactions: " +
+        Object.entries(msg.reactions)
+          .map(([e, c]) => (c > 1 ? `${e}×${c}` : e))
+          .join(", ") +
+        "]"
+      : "";
+
   if (msg.role === "user" && msg.attachmentImageData) {
     const parts = [];
-    if (msg.content) parts.push({ type: "text", text: msg.content });
+    if (msg.content) parts.push({ type: "text", text: msg.content + reactionsSuffix });
     parts.push({ type: "image_url", image_url: { url: msg.attachmentImageData } });
     return parts;
   }
   if (msg.role === "user" && msg.attachmentText) {
-    return `${msg.content}\n\n--- 附件：${msg.attachmentName} ---\n${msg.attachmentText}\n---`;
+    return `${msg.content}\n\n--- 附件：${msg.attachmentName} ---\n${msg.attachmentText}\n---${reactionsSuffix}`;
   }
-  return msg.content;
+  return msg.content + reactionsSuffix;
 }
 
 function updateActiveMessages(state, updater) {
@@ -121,7 +131,7 @@ export function reducer(state, action) {
 
     // ── Conversations ────────────────────────────────────────────────
     case ACTIONS.NEW_CONVERSATION: {
-      const conv = makeConversation(state.model);
+      const conv = makeConversation(state.model, action.payload?.discordMode ?? false);
       return {
         ...state,
         conversations: [conv, ...state.conversations],
@@ -177,7 +187,7 @@ export function reducer(state, action) {
       };
 
     // ── Messaging ────────────────────────────────────────────────────
-    // payload: { content, attachmentName?, attachmentText?, attachmentImageData? }
+    // payload: { content, attachmentName?, attachmentText?, attachmentImageData?, replyTo? }
     case ACTIONS.ADD_USER_MESSAGE:
       return updateActiveMessages(state, (msgs) => [
         ...msgs,
@@ -188,6 +198,8 @@ export function reducer(state, action) {
           attachmentName: action.payload.attachmentName ?? null,
           attachmentText: action.payload.attachmentText ?? null,
           attachmentImageData: action.payload.attachmentImageData ?? null,
+          replyTo: action.payload.replyTo ?? null,
+          reactions: {},
           timestamp: Date.now(),
         },
       ]);
@@ -204,7 +216,7 @@ export function reducer(state, action) {
       return {
         ...updateActiveMessages(state, (msgs) => [
           ...msgs,
-          { id: makeId(), role: "assistant", content, timestamp: Date.now() },
+          { id: makeId(), role: "assistant", content, replyTo: null, reactions: {}, timestamp: Date.now() },
         ]),
         isStreaming: false,
         streamingContent: "",
@@ -306,6 +318,21 @@ export function reducer(state, action) {
           g.id === action.payload ? { ...g, ragEnabled: !g.ragEnabled } : g
         ),
       };
+
+    // ── Discord Mode ──────────────────────────────────────────────────
+    // payload: { messageId, emoji }
+    case ACTIONS.TOGGLE_REACTION: {
+      const { messageId, emoji } = action.payload;
+      return updateActiveMessages(state, (msgs) =>
+        msgs.map((m) => {
+          if (m.id !== messageId) return m;
+          const reactions = { ...(m.reactions ?? {}) };
+          if (reactions[emoji]) delete reactions[emoji];
+          else reactions[emoji] = 1;
+          return { ...m, reactions };
+        })
+      );
+    }
 
     // ── UI / Preferences ──────────────────────────────────────────────
     case ACTIONS.CLEAR_ERROR:

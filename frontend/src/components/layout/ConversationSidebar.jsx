@@ -111,7 +111,10 @@ function ConversationItem({ conv, isActive, onSwitch, isStreaming }) {
       onClick={() => onSwitch(conv.id)}
     >
       <div className="conv-item-main">
-        <span className="conv-item-title">{conv.title}</span>
+        <span className="conv-item-title">
+          {conv.discordMode && <span className="discord-badge" title={t("discordModeBeta")}># </span>}
+          {conv.title}
+        </span>
         <span className="conv-item-date">{formatDate(conv.createdAt, t)}</span>
       </div>
       {hovering && !isStreaming && (
@@ -168,6 +171,8 @@ export function ConversationSidebar() {
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const newGroupInputRef = useRef(null);
+  const [showNewChatPanel, setShowNewChatPanel] = useState(false);
+  const [newChatDiscordMode, setNewChatDiscordMode] = useState(false);
 
   useEffect(() => {
     if (creatingGroup) {
@@ -224,7 +229,7 @@ export function ConversationSidebar() {
             <div className="sidebar-top-btns">
               <button
                 className="new-chat-btn"
-                onClick={() => dispatch({ type: ACTIONS.NEW_CONVERSATION })}
+                onClick={() => { setShowNewChatPanel((v) => !v); setNewChatDiscordMode(false); }}
                 disabled={state.isStreaming}
               >
                 {t("newChat")}
@@ -237,6 +242,37 @@ export function ConversationSidebar() {
                 📂
               </button>
             </div>
+
+            {showNewChatPanel && (
+              <div className="new-chat-panel">
+                <label className="discord-mode-toggle-row">
+                  <span className="discord-mode-label">
+                    {t("discordModeBeta")}
+                    <span className="discord-mode-desc">{t("discordModeDesc")}</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={newChatDiscordMode}
+                    onChange={(e) => setNewChatDiscordMode(e.target.checked)}
+                  />
+                </label>
+                <div className="new-chat-panel-btns">
+                  <button
+                    className="conv-confirm-yes"
+                    onClick={() => {
+                      dispatch({ type: ACTIONS.NEW_CONVERSATION, payload: { discordMode: newChatDiscordMode } });
+                      setShowNewChatPanel(false);
+                      setNewChatDiscordMode(false);
+                    }}
+                  >
+                    {t("createChat")}
+                  </button>
+                  <button className="conv-confirm-no" onClick={() => setShowNewChatPanel(false)}>
+                    {t("cancel")}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {creatingGroup && (
               <div className="new-group-input-row">

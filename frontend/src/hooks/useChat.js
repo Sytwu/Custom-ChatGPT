@@ -35,8 +35,9 @@ export function useChat() {
   /**
    * @param {string} text - The user's typed message (display text only)
    * @param {object|null} attachment - { name, text?, imageData? } from file extraction, or null
+   * @param {object|null} replyTo - { id, snippet, role } of the message being replied to, or null
    */
-  async function sendMessage(text, attachment = null) {
+  async function sendMessage(text, attachment = null, replyTo = null) {
     const trimmedText = text.trim();
     if (!trimmedText && !attachment) return;
     if (state.isStreaming) return;
@@ -49,6 +50,7 @@ export function useChat() {
         attachmentName: attachment?.name ?? null,
         attachmentText: attachment?.text ?? null,
         attachmentImageData: attachment?.imageData ?? null,
+        replyTo: replyTo ?? null,
       },
     });
 
@@ -61,9 +63,11 @@ export function useChat() {
     }
 
     // 3. Build API payload — expand attachment text/image into content for the LLM
+    // If this is a reply, prepend the quoted snippet for the LLM
+    const replyPrefix = replyTo ? `[Replying to: "${replyTo.snippet}"]\n\n` : "";
     const newMsg = {
       role: "user",
-      content: trimmedText,
+      content: replyPrefix + trimmedText,
       attachmentName: attachment?.name ?? null,
       attachmentText: attachment?.text ?? null,
       attachmentImageData: attachment?.imageData ?? null,
@@ -103,9 +107,12 @@ export function useChat() {
     abortControllerRef.current = controller;
 
     try {
+      const discordPrefix = activeConv?.discordMode
+        ? "You are in Discord chat mode. Keep your responses brief and conversational — ideally 1 to 3 sentences. Avoid lengthy explanations unless directly asked.\n\n"
+        : "";
       const body = {
         model: state.model,
-        systemPrompt: ragPrefix + state.systemPrompt,
+        systemPrompt: discordPrefix + ragPrefix + state.systemPrompt,
         messages: apiMessages,
         temperature: state.temperature,
         maxTokens: state.maxTokens,

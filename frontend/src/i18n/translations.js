@@ -85,6 +85,14 @@ export const translations = {
     colour: "顏色",
     rename: "重新命名",
     deleteConv: "刪除",
+
+    // Discord Mode
+    discordModeBeta: "Discord 模式 (beta)",
+    discordModeDesc: "模擬 Discord 聊天介面，支援回覆與 Emoji 反應",
+    createChat: "建立對話",
+    replyingTo: "回覆",
+    cancelReply: "取消",
+    addReaction: "新增反應",
   },
 
   en: {
@@ -173,5 +181,13 @@ export const translations = {
     colour: "Colour",
     rename: "Rename",
     deleteConv: "Delete",
+
+    // Discord Mode
+    discordModeBeta: "Discord Mode (beta)",
+    discordModeDesc: "Discord-style chat with replies and emoji reactions",
+    createChat: "Create Chat",
+    replyingTo: "Replying to",
+    cancelReply: "Cancel",
+    addReaction: "Add Reaction",
   },
 };

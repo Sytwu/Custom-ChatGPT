@@ -22,7 +22,7 @@ function readImageAsDataURL(file) {
   });
 }
 
-export function InputBar() {
+export function InputBar({ replyTo, onCancelReply }) {
   const { state, dispatch } = useAppContext();
   const { sendMessage, stopStream } = useChat();
   const t = useT();
@@ -69,11 +69,12 @@ export function InputBar() {
       dispatch({ type: ACTIONS.STREAM_ERROR, payload: t("imageNotSupported") });
       return;
     }
-    sendMessage(text, attachment);
+    sendMessage(text, attachment, replyTo ?? null);
     setText("");
     setAttachment(null);
     setShowSuggestions(false);
     setSuggestions(null);
+    onCancelReply?.();
     textareaRef.current?.focus();
   }
 
@@ -127,6 +128,15 @@ export function InputBar() {
 
   return (
     <div className="input-bar">
+      {replyTo && (
+        <div className="reply-banner">
+          <span className="reply-banner-label">↩ {t("replyingTo")}</span>
+          <span className="reply-banner-snippet">
+            {replyTo.role === "user" ? "You" : "Assistant"}: {replyTo.snippet}
+          </span>
+          <button className="reply-banner-cancel" onClick={onCancelReply} title={t("cancelReply")}>×</button>
+        </div>
+      )}
       {state.error && (
         <div className="error-banner">
           <span>{state.error}</span>
