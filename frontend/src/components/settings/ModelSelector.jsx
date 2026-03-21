@@ -2,13 +2,15 @@ import React from "react";
 import { MODELS } from "../../constants/models.js";
 import { useAppContext } from "../../hooks/useAppContext.js";
 import { ACTIONS } from "../../context/actions.js";
+import { useT } from "../../i18n/useT.js";
 
 export function ModelSelector() {
   const { state, dispatch } = useAppContext();
+  const t = useT();
 
   return (
     <div className="setting-row">
-      <label htmlFor="model-select">Model</label>
+      <label htmlFor="model-select">{t("model")}</label>
       <select
         id="model-select"
         value={state.model}

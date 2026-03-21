@@ -40,4 +40,6 @@ export const ACTIONS = {
 
   // UI
   CLEAR_ERROR: "CLEAR_ERROR",
+  SET_THEME: "SET_THEME",
+  SET_LANGUAGE: "SET_LANGUAGE",
 };

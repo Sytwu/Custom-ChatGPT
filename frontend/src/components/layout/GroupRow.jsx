@@ -3,6 +3,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { useAppContext } from "../../hooks/useAppContext.js";
 import { ACTIONS } from "../../context/actions.js";
 import { ColorPicker } from "../chat/ColorPicker.jsx";
+import { useT } from "../../i18n/useT.js";
 
 /**
  * Renders a group header row in the sidebar.
@@ -10,6 +11,7 @@ import { ColorPicker } from "../chat/ColorPicker.jsx";
  */
 export function GroupRow({ group, children }) {
   const { dispatch } = useAppContext();
+  const t = useT();
   const [hovering, setHovering] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [editName, setEditName] = useState(group.name);
@@ -59,10 +61,10 @@ export function GroupRow({ group, children }) {
   if (confirmDelete) {
     return (
       <div className="group-row group-confirm">
-        <span className="conv-item-confirm-text">Delete group &ldquo;{group.name}&rdquo;?</span>
+        <span className="conv-item-confirm-text">{t("deleteGroup")} &ldquo;{group.name}&rdquo;?</span>
         <div className="conv-item-confirm-btns">
-          <button className="conv-confirm-yes" onClick={handleDelete}>Delete</button>
-          <button className="conv-confirm-no" onClick={() => setConfirmDelete(false)}>Cancel</button>
+          <button className="conv-confirm-yes" onClick={handleDelete}>{t("delete")}</button>
+          <button className="conv-confirm-no" onClick={() => setConfirmDelete(false)}>{t("cancel")}</button>
         </div>
       </div>
     );
@@ -79,7 +81,7 @@ export function GroupRow({ group, children }) {
         <button
           className="group-collapse-btn"
           onClick={handleToggleCollapse}
-          title={group.collapsed ? "Expand" : "Collapse"}
+          title={group.collapsed ? t("expand") : t("collapse")}
         >
           {group.collapsed ? "▶" : "▼"}
         </button>
@@ -100,29 +102,29 @@ export function GroupRow({ group, children }) {
         )}
 
         {group.ragEnabled && (
-          <span className="rag-badge" title="Group RAG enabled">RAG</span>
+          <span className="rag-badge" title={t("ragEnabled")}>RAG</span>
         )}
 
         {hovering && !renaming && (
           <div className="group-actions" onClick={(e) => e.stopPropagation()}>
             <button
               className="conv-action-btn"
-              title="Group colour"
+              title={t("groupColour")}
               onClick={() => setShowColorPicker((v) => !v)}
             >🎨</button>
             <button
               className="conv-action-btn"
-              title={group.ragEnabled ? "Disable group RAG" : "Enable group RAG"}
+              title={group.ragEnabled ? t("disableGroupRag") : t("enableGroupRag")}
               onClick={handleToggleRag}
             >🔗</button>
             <button
               className="conv-action-btn"
-              title="Rename group"
+              title={t("renameGroup")}
               onClick={() => setRenaming(true)}
             >✏️</button>
             <button
               className="conv-action-btn"
-              title="Delete group"
+              title={t("deleteGroupBtn")}
               onClick={() => setConfirmDelete(true)}
             >🗑️</button>
           </div>

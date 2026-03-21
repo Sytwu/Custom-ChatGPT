@@ -11,19 +11,21 @@ import { useAppContext } from "../../hooks/useAppContext.js";
 import { ACTIONS } from "../../context/actions.js";
 import { ColorPicker } from "../chat/ColorPicker.jsx";
 import { GroupRow } from "./GroupRow.jsx";
+import { useT } from "../../i18n/useT.js";
 
-function formatDate(ts) {
+function formatDate(ts, t) {
   const d = new Date(ts);
   const now = new Date();
   const diffDays = Math.floor((now - d) / 86400000);
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
+  if (diffDays === 0) return t("today");
+  if (diffDays === 1) return t("yesterday");
   if (diffDays < 7) return `${diffDays}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function ConversationItem({ conv, isActive, onSwitch, isStreaming }) {
   const { dispatch } = useAppContext();
+  const t = useT();
   const [hovering, setHovering] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -73,10 +75,10 @@ function ConversationItem({ conv, isActive, onSwitch, isStreaming }) {
         className={`conv-item conv-item-confirm ${isActive ? "active" : ""}`}
         style={style}
       >
-        <span className="conv-item-confirm-text">Delete this chat?</span>
+        <span className="conv-item-confirm-text">{t("deleteThisChat")}</span>
         <div className="conv-item-confirm-btns">
-          <button className="conv-confirm-yes" onClick={handleDelete}>Delete</button>
-          <button className="conv-confirm-no" onClick={() => setConfirmDelete(false)}>Cancel</button>
+          <button className="conv-confirm-yes" onClick={handleDelete}>{t("delete")}</button>
+          <button className="conv-confirm-no" onClick={() => setConfirmDelete(false)}>{t("cancel")}</button>
         </div>
       </div>
     );
@@ -110,23 +112,23 @@ function ConversationItem({ conv, isActive, onSwitch, isStreaming }) {
     >
       <div className="conv-item-main">
         <span className="conv-item-title">{conv.title}</span>
-        <span className="conv-item-date">{formatDate(conv.createdAt)}</span>
+        <span className="conv-item-date">{formatDate(conv.createdAt, t)}</span>
       </div>
       {hovering && !isStreaming && (
         <div className="conv-item-actions" onClick={(e) => e.stopPropagation()}>
           <button
             className="conv-action-btn"
-            title="Colour"
+            title={t("colour")}
             onClick={() => setShowColorPicker((v) => !v)}
           >🎨</button>
           <button
             className="conv-action-btn"
-            title="Rename"
+            title={t("rename")}
             onClick={() => setRenaming(true)}
           >✏️</button>
           <button
             className="conv-action-btn"
-            title="Delete"
+            title={t("deleteConv")}
             onClick={() => setConfirmDelete(true)}
           >🗑️</button>
         </div>
@@ -161,6 +163,7 @@ function RootDropZone({ children }) {
 
 export function ConversationSidebar() {
   const { state, dispatch } = useAppContext();
+  const t = useT();
   const [collapsed, setCollapsed] = useState(false);
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
@@ -189,7 +192,7 @@ export function ConversationSidebar() {
   }
 
   function commitCreateGroup() {
-    const name = newGroupName.trim() || "New Group";
+    const name = newGroupName.trim() || t("newGroup");
     dispatch({ type: ACTIONS.CREATE_GROUP, payload: { name } });
     setCreatingGroup(false);
   }
@@ -206,11 +209,11 @@ export function ConversationSidebar() {
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <aside className={`sidebar conv-sidebar ${collapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header">
-          {!collapsed && <h2>Chats</h2>}
+          {!collapsed && <h2>{t("chats")}</h2>}
           <button
             className="collapse-btn"
             onClick={() => setCollapsed((c) => !c)}
-            title={collapsed ? "Expand chats" : "Collapse chats"}
+            title={collapsed ? t("expandChats") : t("collapseChats")}
           >
             {collapsed ? "»" : "«"}
           </button>
@@ -224,12 +227,12 @@ export function ConversationSidebar() {
                 onClick={() => dispatch({ type: ACTIONS.NEW_CONVERSATION })}
                 disabled={state.isStreaming}
               >
-                + New Chat
+                {t("newChat")}
               </button>
               <button
                 className="new-group-btn"
                 onClick={() => setCreatingGroup((v) => !v)}
-                title="New group"
+                title={t("newGroup")}
               >
                 📂
               </button>
@@ -240,7 +243,7 @@ export function ConversationSidebar() {
                 <input
                   ref={newGroupInputRef}
                   className="conv-rename-input"
-                  placeholder="Group name…"
+                  placeholder={t("groupNamePlaceholder")}
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
                   onBlur={commitCreateGroup}
@@ -250,7 +253,6 @@ export function ConversationSidebar() {
             )}
 
             <div className="conv-list">
-              {/* Render groups */}
               {state.groups.map((group) => {
                 const groupConvs = sorted.filter((c) => c.groupId === group.id);
                 return (
@@ -270,7 +272,6 @@ export function ConversationSidebar() {
                 );
               })}
 
-              {/* Ungrouped conversations at root */}
               <RootDropZone>
                 {ungrouped.map((conv) => (
                   <ConversationItem

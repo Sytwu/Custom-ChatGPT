@@ -24,10 +24,19 @@ router.post("/stream", async (req, res, next) => {
       // Inject system prompt as a prefix on the first user message
       const firstUser = cleanMessages.findIndex((m) => m.role === "user");
       if (firstUser !== -1) {
-        cleanMessages[firstUser] = {
-          role: "user",
-          content: `[System: ${systemPrompt.trim()}]\n\n${cleanMessages[firstUser].content}`,
-        };
+        const existing = cleanMessages[firstUser].content;
+        // content may be a string or an array (vision format)
+        if (Array.isArray(existing)) {
+          cleanMessages[firstUser] = {
+            role: "user",
+            content: [{ type: "text", text: `[System: ${systemPrompt.trim()}]\n\n` }, ...existing],
+          };
+        } else {
+          cleanMessages[firstUser] = {
+            role: "user",
+            content: `[System: ${systemPrompt.trim()}]\n\n${existing}`,
+          };
+        }
       }
     } else {
       fullMessages.push({ role: "system", content: systemPrompt.trim() });

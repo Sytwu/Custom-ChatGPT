@@ -40,6 +40,8 @@ export const initialState = {
   maxTokens: 1024,
   memoryEnabled: true,
   memoryCutoff: 10,
+  theme: "dark",
+  language: "zh-TW",
 
   // Multi-conversation
   conversations: [],
@@ -61,10 +63,17 @@ export function getActiveMessages(state) {
 }
 
 /**
- * Build the content string to send to the LLM API.
- * For user messages with an attachment, appends the file text block.
+ * Build the content to send to the LLM API.
+ * For user messages with an image attachment, returns OpenAI vision array format.
+ * For user messages with a text attachment, appends the file text block.
  */
 export function apiContent(msg) {
+  if (msg.role === "user" && msg.attachmentImageData) {
+    const parts = [];
+    if (msg.content) parts.push({ type: "text", text: msg.content });
+    parts.push({ type: "image_url", image_url: { url: msg.attachmentImageData } });
+    return parts;
+  }
   if (msg.role === "user" && msg.attachmentText) {
     return `${msg.content}\n\n--- 附件：${msg.attachmentName} ---\n${msg.attachmentText}\n---`;
   }
@@ -168,7 +177,7 @@ export function reducer(state, action) {
       };
 
     // ── Messaging ────────────────────────────────────────────────────
-    // payload: { content, attachmentName?, attachmentText? }
+    // payload: { content, attachmentName?, attachmentText?, attachmentImageData? }
     case ACTIONS.ADD_USER_MESSAGE:
       return updateActiveMessages(state, (msgs) => [
         ...msgs,
@@ -178,6 +187,7 @@ export function reducer(state, action) {
           content: action.payload.content,
           attachmentName: action.payload.attachmentName ?? null,
           attachmentText: action.payload.attachmentText ?? null,
+          attachmentImageData: action.payload.attachmentImageData ?? null,
           timestamp: Date.now(),
         },
       ]);
@@ -223,6 +233,8 @@ export function reducer(state, action) {
         maxTokens: p.maxTokens ?? state.maxTokens,
         memoryEnabled: p.memoryEnabled ?? state.memoryEnabled,
         memoryCutoff: p.memoryCutoff ?? state.memoryCutoff,
+        theme: p.theme ?? state.theme,
+        language: p.language ?? state.language,
         conversations,
         activeConversationId: activeId,
         groups: p.groups ?? [],
@@ -295,9 +307,15 @@ export function reducer(state, action) {
         ),
       };
 
-    // ── UI ────────────────────────────────────────────────────────────
+    // ── UI / Preferences ──────────────────────────────────────────────
     case ACTIONS.CLEAR_ERROR:
       return { ...state, error: null };
+
+    case ACTIONS.SET_THEME:
+      return { ...state, theme: action.payload };
+
+    case ACTIONS.SET_LANGUAGE:
+      return { ...state, language: action.payload };
 
     default:
       return state;

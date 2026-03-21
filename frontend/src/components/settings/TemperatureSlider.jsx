@@ -1,14 +1,16 @@
 import React from "react";
 import { useAppContext } from "../../hooks/useAppContext.js";
 import { ACTIONS } from "../../context/actions.js";
+import { useT } from "../../i18n/useT.js";
 
 export function TemperatureSlider() {
   const { state, dispatch } = useAppContext();
+  const t = useT();
 
   return (
     <div className="setting-row">
       <label htmlFor="temperature">
-        Temperature <span className="value-badge">{state.temperature.toFixed(1)}</span>
+        {t("temperature")} <span className="value-badge">{state.temperature.toFixed(1)}</span>
       </label>
       <input
         id="temperature"
@@ -22,8 +24,8 @@ export function TemperatureSlider() {
         }
       />
       <div className="range-labels">
-        <span>Precise (0)</span>
-        <span>Creative (2)</span>
+        <span>{t("precise")}</span>
+        <span>{t("creative")}</span>
       </div>
     </div>
   );

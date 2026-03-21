@@ -34,7 +34,7 @@ export function useChat() {
 
   /**
    * @param {string} text - The user's typed message (display text only)
-   * @param {object|null} attachment - { name, text } from file extraction, or null
+   * @param {object|null} attachment - { name, text?, imageData? } from file extraction, or null
    */
   async function sendMessage(text, attachment = null) {
     const trimmedText = text.trim();
@@ -48,6 +48,7 @@ export function useChat() {
         content: trimmedText,
         attachmentName: attachment?.name ?? null,
         attachmentText: attachment?.text ?? null,
+        attachmentImageData: attachment?.imageData ?? null,
       },
     });
 
@@ -59,12 +60,13 @@ export function useChat() {
       dispatch({ type: ACTIONS.SET_TITLE, payload: title });
     }
 
-    // 3. Build API payload — expand attachment text into content for the LLM
+    // 3. Build API payload — expand attachment text/image into content for the LLM
     const newMsg = {
       role: "user",
       content: trimmedText,
       attachmentName: attachment?.name ?? null,
       attachmentText: attachment?.text ?? null,
+      attachmentImageData: attachment?.imageData ?? null,
     };
     const allMessages = [...activeMessages, newMsg];
     const trimmedMessages = applyMemoryCutoff(allMessages, state.memoryEnabled, state.memoryCutoff);

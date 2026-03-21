@@ -1,13 +1,15 @@
 import React from "react";
 import { useAppContext } from "../../hooks/useAppContext.js";
 import { ACTIONS } from "../../context/actions.js";
+import { useT } from "../../i18n/useT.js";
 
 export function MaxTokensInput() {
   const { state, dispatch } = useAppContext();
+  const t = useT();
 
   return (
     <div className="setting-row">
-      <label htmlFor="max-tokens">Max Tokens</label>
+      <label htmlFor="max-tokens">{t("maxTokens")}</label>
       <input
         id="max-tokens"
         type="number"

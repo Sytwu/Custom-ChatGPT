@@ -10,7 +10,16 @@ export function MessageBubble({ message }) {
         {isUser ? (
           <>
             {message.content && <span>{message.content}</span>}
-            {message.attachmentName && (
+            {message.attachmentImageData && (
+              <div className="message-image-preview">
+                <img
+                  src={message.attachmentImageData}
+                  alt={message.attachmentName ?? "image"}
+                  className="message-image-thumb"
+                />
+              </div>
+            )}
+            {message.attachmentName && !message.attachmentImageData && (
               <div className="message-attachment-chip">
                 <span>📎</span>
                 <span className="message-attachment-name">{message.attachmentName}</span>

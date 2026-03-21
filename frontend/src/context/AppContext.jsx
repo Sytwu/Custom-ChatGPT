@@ -32,6 +32,11 @@ export function AppProvider({ children }) {
     });
   }, []);
 
+  // Apply theme to document root
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", state.theme);
+  }, [state.theme]);
+
   // Persist settings changes
   useEffect(() => {
     saveSettings({
@@ -41,8 +46,10 @@ export function AppProvider({ children }) {
       maxTokens: state.maxTokens,
       memoryEnabled: state.memoryEnabled,
       memoryCutoff: state.memoryCutoff,
+      theme: state.theme,
+      language: state.language,
     });
-  }, [state.model, state.systemPrompt, state.temperature, state.maxTokens, state.memoryEnabled, state.memoryCutoff]);
+  }, [state.model, state.systemPrompt, state.temperature, state.maxTokens, state.memoryEnabled, state.memoryCutoff, state.theme, state.language]);
 
   // Persist API keys changes
   useEffect(() => {

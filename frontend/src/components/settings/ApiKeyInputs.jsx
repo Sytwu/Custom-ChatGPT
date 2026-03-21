@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useAppContext } from "../../hooks/useAppContext.js";
 import { ACTIONS } from "../../context/actions.js";
+import { useT } from "../../i18n/useT.js";
 
 function ApiKeyField({ label, value, onChange }) {
+  const t = useT();
   const [show, setShow] = useState(false);
   return (
     <div className="setting-row">
@@ -12,7 +14,7 @@ function ApiKeyField({ label, value, onChange }) {
           type={show ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Enter your API key here"
+          placeholder={t("apiKeyPlaceholder")}
           spellCheck={false}
           autoComplete="off"
         />
@@ -20,7 +22,7 @@ function ApiKeyField({ label, value, onChange }) {
           className="eye-btn"
           type="button"
           onClick={() => setShow((s) => !s)}
-          title={show ? "Hide key" : "Show key"}
+          title={show ? t("hideKey") : t("showKey")}
         >
           {show ? "🙈" : "👁"}
         </button>
@@ -31,15 +33,16 @@ function ApiKeyField({ label, value, onChange }) {
 
 export function ApiKeyInputs() {
   const { state, dispatch } = useAppContext();
+  const t = useT();
   return (
     <div className="setting-group">
       <ApiKeyField
-        label="Groq API Key"
+        label={t("groqApiKey")}
         value={state.groqApiKey}
         onChange={(val) => dispatch({ type: ACTIONS.SET_GROQ_KEY, payload: val })}
       />
       <ApiKeyField
-        label="NVIDIA API Key"
+        label={t("nvidiaApiKey")}
         value={state.nvidiaApiKey}
         onChange={(val) => dispatch({ type: ACTIONS.SET_NVIDIA_KEY, payload: val })}
       />

@@ -21,3 +21,14 @@ export async function streamChat(messages, model, temperature, maxTokens, apiKey
   }
   return groqService.streamChat(messages, model, temperature, maxTokens, apiKey);
 }
+
+/**
+ * Dispatch a non-streaming chat request to the correct LLM provider.
+ * Returns the response content string.
+ */
+export async function completeChat(messages, model, temperature, maxTokens, apiKey) {
+  if (isNvidiaModel(model)) {
+    return nvidiaService.completeChat(messages, model, temperature, maxTokens, apiKey);
+  }
+  return groqService.completeChat(messages, model, temperature, maxTokens, apiKey);
+}

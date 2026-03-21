@@ -5,9 +5,11 @@ import { TemperatureSlider } from "../settings/TemperatureSlider.jsx";
 import { MaxTokensInput } from "../settings/MaxTokensInput.jsx";
 import { MemoryControls } from "../settings/MemoryControls.jsx";
 import { ApiKeyInputs } from "../settings/ApiKeyInputs.jsx";
+import { useT } from "../../i18n/useT.js";
 
 export function SettingsSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const t = useT();
 
   return (
     <aside className={`sidebar settings-sidebar ${collapsed ? "collapsed" : ""}`}>
@@ -15,11 +17,11 @@ export function SettingsSidebar() {
         <button
           className="collapse-btn"
           onClick={() => setCollapsed((c) => !c)}
-          title={collapsed ? "Expand settings" : "Collapse settings"}
+          title={collapsed ? t("expandSettings") : t("collapseSettings")}
         >
           {collapsed ? "«" : "»"}
         </button>
-        {!collapsed && <h2>Settings</h2>}
+        {!collapsed && <h2>{t("settings")}</h2>}
       </div>
 
       {!collapsed && (
