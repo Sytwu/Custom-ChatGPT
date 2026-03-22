@@ -50,7 +50,7 @@ function ReactionPicker({ messageId }) {
   );
 }
 
-export function DiscordMessageBubble({ message, grouped, onReply, allMessages }) {
+export function DiscordMessageBubble({ message, grouped, onReply, allMessages, pending = false }) {
   const { dispatch } = useAppContext();
   const t = useT();
   const [hovering, setHovering] = useState(false);
@@ -74,8 +74,8 @@ export function DiscordMessageBubble({ message, grouped, onReply, allMessages })
 
   return (
     <div
-      className={`discord-msg${grouped ? " grouped" : ""}`}
-      onMouseEnter={() => setHovering(true)}
+      className={`discord-msg${grouped ? " grouped" : ""}${pending ? " pending" : ""}`}
+      onMouseEnter={() => !pending && setHovering(true)}
       onMouseLeave={() => { setHovering(false); setShowPicker(false); }}
     >
       {/* Avatar — hidden for grouped messages */}
@@ -108,7 +108,14 @@ export function DiscordMessageBubble({ message, grouped, onReply, allMessages })
 
         {/* Message content */}
         <div className="discord-content">
-          {isUser ? (
+          {isUser && message.stickerUrl ? (
+            /* Sticker message — show image only, text goes to LLM not UI */
+            <img
+              src={message.stickerUrl}
+              alt={message.stickerDescription ?? "sticker"}
+              className="discord-sticker-img"
+            />
+          ) : isUser ? (
             <>
               {message.content && <span>{message.content}</span>}
               {message.attachmentImageData && (
@@ -150,8 +157,8 @@ export function DiscordMessageBubble({ message, grouped, onReply, allMessages })
         )}
       </div>
 
-      {/* Hover action toolbar */}
-      {hovering && (
+      {/* Hover action toolbar — not shown for pending messages */}
+      {hovering && !pending && (
         <div className="discord-hover-actions">
           <div style={{ position: "relative" }}>
             <button

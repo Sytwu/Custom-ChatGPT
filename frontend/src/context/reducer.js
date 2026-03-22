@@ -187,7 +187,7 @@ export function reducer(state, action) {
       };
 
     // ── Messaging ────────────────────────────────────────────────────
-    // payload: { content, attachmentName?, attachmentText?, attachmentImageData?, replyTo? }
+    // payload: { content, attachmentName?, attachmentText?, attachmentImageData?, replyTo?, stickerUrl?, stickerDescription? }
     case ACTIONS.ADD_USER_MESSAGE:
       return updateActiveMessages(state, (msgs) => [
         ...msgs,
@@ -199,6 +199,8 @@ export function reducer(state, action) {
           attachmentText: action.payload.attachmentText ?? null,
           attachmentImageData: action.payload.attachmentImageData ?? null,
           replyTo: action.payload.replyTo ?? null,
+          stickerUrl: action.payload.stickerUrl ?? null,
+          stickerDescription: action.payload.stickerDescription ?? null,
           reactions: {},
           timestamp: Date.now(),
         },
@@ -213,11 +215,20 @@ export function reducer(state, action) {
     case ACTIONS.FINISH_STREAM: {
       if (!state.streamingContent) return { ...state, isStreaming: false };
       const content = state.streamingContent;
+      const now = Date.now();
+      const newMessages = [content].map((part, i) => ({
+        id: makeId(),
+        role: "assistant",
+        content: part,
+        replyTo: null,
+        reactions: {},
+        stickerUrl: null,
+        stickerDescription: null,
+        timestamp: now + i, // ensure unique timestamps for grouped logic
+      }));
+
       return {
-        ...updateActiveMessages(state, (msgs) => [
-          ...msgs,
-          { id: makeId(), role: "assistant", content, replyTo: null, reactions: {}, timestamp: Date.now() },
-        ]),
+        ...updateActiveMessages(state, (msgs) => [...msgs, ...newMessages]),
         isStreaming: false,
         streamingContent: "",
       };

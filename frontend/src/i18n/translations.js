@@ -63,6 +63,7 @@ export const translations = {
 
     // Input bar
     inputPlaceholder: "輸入訊息… (Enter 傳送，Shift+Enter 換行)",
+    discordInputPlaceholder: "輸入訊息… (Enter 加入佇列，Shift+Enter 換行)",
     attachFile: "附加檔案（PDF、TXT、程式碼…）",
     stop: "⏹ 停止",
     send: "傳送",
@@ -93,6 +94,10 @@ export const translations = {
     replyingTo: "回覆",
     cancelReply: "取消",
     addReaction: "新增反應",
+    addToQueue: "加入佇列",
+    sendAll: "全部送出",
+    stickers: "貼圖",
+    clearQueue: "清空佇列",
   },
 
   en: {
@@ -159,6 +164,7 @@ export const translations = {
 
     // Input bar
     inputPlaceholder: "Type a message… (Enter to send, Shift+Enter for newline)",
+    discordInputPlaceholder: "Type a message… (Enter to queue, Shift+Enter for newline)",
     attachFile: "Attach file (PDF, TXT, code files…)",
     stop: "⏹ Stop",
     send: "Send",
@@ -189,5 +195,9 @@ export const translations = {
     replyingTo: "Replying to",
     cancelReply: "Cancel",
     addReaction: "Add Reaction",
+    addToQueue: "Add to Queue",
+    sendAll: "Send All",
+    stickers: "Stickers",
+    clearQueue: "Clear Queue",
   },
 };

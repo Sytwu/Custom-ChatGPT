@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { useAppContext } from "../../hooks/useAppContext.js";
 import { useChat } from "../../hooks/useChat.js";
 import { ACTIONS } from "../../context/actions.js";
 import { FileAttachment } from "./FileAttachment.jsx";
 import { PromptSuggestions } from "./PromptSuggestions.jsx";
+import { StickerPicker } from "./StickerPicker.jsx";
 import { extractFromFile } from "../../utils/fileExtractor.js";
 import { isVisionModel } from "../../constants/models.js";
 import { useT } from "../../i18n/useT.js";
@@ -22,9 +24,9 @@ function readImageAsDataURL(file) {
   });
 }
 
-export function InputBar({ replyTo, onCancelReply }) {
+export function InputBar({ replyTo, onCancelReply, msgQueue = [], onAddToQueue, onClearQueue }) {
   const { state, dispatch } = useAppContext();
-  const { sendMessage, stopStream } = useChat();
+  const { sendMessage, sendMessageBatch, sendSticker, stopStream } = useChat();
   const t = useT();
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState(null);
@@ -32,11 +34,18 @@ export function InputBar({ replyTo, onCancelReply }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState(null);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [pickerPos, setPickerPos] = useState({ bottom: 0, left: 0 });
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const stickerBtnRef = useRef(null);
 
   const hasImage = attachment?.imageData != null;
   const currentModelSupportsVision = isVisionModel(state.model);
+
+  // Detect if active conversation is in Discord mode
+  const activeConv = state.conversations.find((c) => c.id === state.activeConversationId);
+  const isDiscord = activeConv?.discordMode ?? false;
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
@@ -62,29 +71,59 @@ export function InputBar({ replyTo, onCancelReply }) {
     setExtracting(false);
   }
 
+  function handleAddToQueue() {
+    if (!text.trim()) return;
+    onAddToQueue?.({ content: text.trim() });
+    setText("");
+    textareaRef.current?.focus();
+  }
+
   function handleSend() {
     if (state.isStreaming) return;
-    if (!text.trim() && !attachment) return;
+    if (!text.trim() && !attachment && msgQueue.length === 0) return;
     if (hasImage && !currentModelSupportsVision) {
       dispatch({ type: ACTIONS.STREAM_ERROR, payload: t("imageNotSupported") });
       return;
     }
-    sendMessage(text, attachment, replyTo ?? null);
-    setText("");
-    setAttachment(null);
-    setShowSuggestions(false);
-    setSuggestions(null);
-    onCancelReply?.();
+
+    if (isDiscord) {
+      // Combine queue + current text, send as batch
+      const all = [
+        ...msgQueue,
+        ...(text.trim() ? [{ content: text.trim() }] : []),
+      ];
+      if (all.length === 0 && !attachment) return;
+      onClearQueue?.();
+      setText("");
+      setAttachment(null);
+      setShowSuggestions(false);
+      setSuggestions(null);
+      onCancelReply?.();
+      sendMessageBatch(all, attachment, replyTo ?? null);
+    } else {
+      if (!text.trim() && !attachment) return;
+      sendMessage(text, attachment, replyTo ?? null);
+      setText("");
+      setAttachment(null);
+      setShowSuggestions(false);
+      setSuggestions(null);
+      onCancelReply?.();
+    }
     textareaRef.current?.focus();
   }
 
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      if (isDiscord) {
+        handleAddToQueue();
+      } else {
+        handleSend();
+      }
     }
     if (e.key === "Escape") {
       setShowSuggestions(false);
+      setShowStickerPicker(false);
     }
   }
 
@@ -99,7 +138,6 @@ export function InputBar({ replyTo, onCancelReply }) {
 
       const body = { text: text.trim(), model: state.model };
       if (apiKey) body.apiKey = apiKey;
-
 
       const res = await fetch(`${API_BASE}/api/suggest`, {
         method: "POST",
@@ -126,6 +164,23 @@ export function InputBar({ replyTo, onCancelReply }) {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [showSuggestions]);
 
+  // Close sticker picker when clicking outside the portal or the sticker button
+  useEffect(() => {
+    if (!showStickerPicker) return;
+    function handleOutside(e) {
+      if (
+        !e.target.closest(".sticker-picker-portal") &&
+        !e.target.closest(".sticker-picker-anchor")
+      ) {
+        setShowStickerPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [showStickerPicker]);
+
+  const hasPendingOrText = msgQueue.length > 0 || !!text.trim();
+
   return (
     <div className="input-bar">
       {replyTo && (
@@ -137,6 +192,7 @@ export function InputBar({ replyTo, onCancelReply }) {
           <button className="reply-banner-cancel" onClick={onCancelReply} title={t("cancelReply")}>×</button>
         </div>
       )}
+
       {state.error && (
         <div className="error-banner">
           <span>{state.error}</span>
@@ -160,6 +216,30 @@ export function InputBar({ replyTo, onCancelReply }) {
           onClose={() => setShowSuggestions(false)}
         />
       )}
+
+      {/* Discord Mode: sticker picker — fixed portal to escape overflow constraints */}
+      {isDiscord && showStickerPicker && ReactDOM.createPortal(
+        <div
+          className="sticker-picker-portal"
+          style={{ bottom: pickerPos.bottom, left: pickerPos.left }}
+        >
+          <StickerPicker
+            onSelect={({ url, description }) => {
+              if (isDiscord) {
+                // Queue the sticker as a pending bubble — sent when user presses Send
+                onAddToQueue?.({ content: `[sticker: ${description}]`, stickerUrl: url, stickerDescription: description });
+              } else {
+                sendSticker(url, description, replyTo ?? null);
+                onCancelReply?.();
+              }
+              setShowStickerPicker(false);
+            }}
+            onClose={() => setShowStickerPicker(false)}
+          />
+        </div>,
+        document.body
+      )}
+
       <div className="input-row">
         <input
           ref={fileInputRef}
@@ -184,24 +264,58 @@ export function InputBar({ replyTo, onCancelReply }) {
         >
           ✨
         </button>
+
+        {/* Discord Mode: sticker button */}
+        {isDiscord && (
+          <div className="sticker-picker-anchor">
+            <button
+              ref={stickerBtnRef}
+              className="sticker-btn"
+              onClick={() => {
+                if (!showStickerPicker && stickerBtnRef.current) {
+                  const rect = stickerBtnRef.current.getBoundingClientRect();
+                  setPickerPos({
+                    bottom: window.innerHeight - rect.top + 8,
+                    left: rect.left,
+                  });
+                }
+                setShowStickerPicker((v) => !v);
+              }}
+              disabled={state.isStreaming}
+              title={t("stickers")}
+            >
+              🖼️
+            </button>
+          </div>
+        )}
+
         <textarea
           ref={textareaRef}
           rows={1}
-          placeholder={t("inputPlaceholder")}
+          placeholder={isDiscord ? t("discordInputPlaceholder") : t("inputPlaceholder")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={state.isStreaming}
         />
+
         {state.isStreaming ? (
           <button className="stop-btn" onClick={stopStream} title={t("stopGeneration")}>
             {t("stop")}
+          </button>
+        ) : isDiscord && msgQueue.length > 0 ? (
+          <button
+            className="send-all-btn"
+            onClick={handleSend}
+            disabled={!hasPendingOrText && !attachment}
+          >
+            {t("sendAll")} ({msgQueue.length + (text.trim() ? 1 : 0)})
           </button>
         ) : (
           <button
             className="send-btn"
             onClick={handleSend}
-            disabled={!text.trim() && !attachment}
+            disabled={isDiscord ? (!text.trim() && !attachment) : (!text.trim() && !attachment)}
           >
             {t("send")}
           </button>

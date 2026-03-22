@@ -71,11 +71,23 @@ All app state lives in a single React Context + useReducer (`context/reducer.js`
 State is persisted to `localStorage` via `services/storage.js` using 5 separate keys (`ccgpt_settings`, `ccgpt_api_keys`, `ccgpt_conversations`, `ccgpt_active_id`, `ccgpt_groups`). Saving is skipped during active streaming to reduce churn. `AppContext.jsx` applies `data-theme` to `document.documentElement` whenever `state.theme` changes.
 
 ### Message & Attachment Architecture
-Message objects store `{ role, content, attachmentName, attachmentText, attachmentImageData, timestamp }`. Full attachment content is stored separately from `content` to keep UI display clean. The `apiContent(msg)` helper in `reducer.js` expands at API-send time:
+Message objects store `{ role, content, attachmentName, attachmentText, attachmentImageData, timestamp, replyTo, reactions, stickerUrl, stickerDescription }`. Full attachment content is stored separately from `content` to keep UI display clean. The `apiContent(msg)` helper in `reducer.js` expands at API-send time:
 - **Text attachment** → appends file content as a fenced block to the content string
 - **Image attachment** → returns OpenAI vision array format `[{type:"text",...}, {type:"image_url",...}]`
 
 File extraction (`utils/fileExtractor.js`) supports PDF (via `pdfjs-dist`), plain text, and code/data files up to 50K characters. Images are read as base64 data URLs via `FileReader.readAsDataURL` directly in `InputBar.jsx`. The backend JSON body limit is 20 MB to accommodate base64 images.
+
+### Discord Mode
+Per-conversation toggle (`conversation.discordMode`). When active:
+- **Input behaviour**: Enter adds to a message queue (not sends); Shift+Enter inserts newline; a "全部送出 (N)" button sends all queued messages at once.
+- **Message queue**: `msgQueue` state lives in `ChatArea.jsx` (lifted from InputBar) and is passed as `pendingMessages` to `MessageList`. Pending messages render as semi-transparent `DiscordMessageBubble` components (no hover actions) until sent.
+- **Batch send**: `sendMessageBatch()` in `useChat.js` builds the full API payload from current state *before* dispatching user messages (critical — React 18 batches all dispatches), then dispatches each message as a separate `ADD_USER_MESSAGE`, and streams one unified API response.
+- **Stickers**: Selecting a sticker in Discord mode queues it as a pending bubble `{ content, stickerUrl, stickerDescription }`; in non-Discord mode it sends immediately via `sendSticker()`.
+- **System prompt prefix**: Discord mode prepends a brevity instruction to the system prompt.
+- **Rendering**: `MessageList.jsx` uses `DiscordMessageBubble` for all messages (with grouping by timestamp) instead of `MessageBubble`. Emoji reactions are stored per-message in `reactions: {}` and rendered in `DiscordMessageBubble`.
+
+### Sticker System
+Sticker packs are configured in `frontend/src/constants/stickers.json` (edit this to update descriptions). `stickers.js` imports the JSON and exposes `STICKER_PACKS` and `stickerUrl()`. Images live in `frontend/public/stickers/<folder>/01.png` etc. The `StickerPicker` component renders inside a `ReactDOM.createPortal` to `document.body` (fixed positioning) to escape `overflow: hidden` parents. Sticker descriptions are sent to the LLM as `[sticker: <description>]`.
 
 ### i18n
 All UI strings go through `useT()` from `frontend/src/i18n/useT.js`. Add new strings to both `"zh-TW"` and `"en"` entries in `frontend/src/i18n/translations.js`. Dynamic strings (e.g. `memoryHint`) are stored as functions and called as `t("key", arg)`.
@@ -134,6 +146,8 @@ Keys can be supplied per-request from the frontend (stored in React state / loca
 | Fix/extend RAG | `frontend/src/hooks/useRag.js`, `backend/src/routes/rag.js`, `services/embeddings.js` |
 | Prompt suggestions | `backend/src/routes/suggest.js`, `frontend/src/components/chat/PromptSuggestions.jsx` |
 | Image / vision | `frontend/src/components/chat/InputBar.jsx`, `context/reducer.js` (`apiContent`), `constants/models.js` |
+| Discord mode / queue | `components/layout/ChatArea.jsx`, `hooks/useChat.js` (`sendMessageBatch`), `components/chat/DiscordMessageBubble.jsx`, `MessageList.jsx` |
+| Sticker packs / descriptions | `frontend/src/constants/stickers.json` (data), `stickers.js` (loader), `components/chat/StickerPicker.jsx` |
 | Sidebar / drag-drop | `components/layout/ConversationSidebar.jsx`, `GroupRow.jsx` |
 | Storage / persistence | `frontend/src/services/storage.js`, `context/AppContext.jsx` |
 | Theme / styling | `frontend/src/styles.css` (CSS variables in `:root` and `[data-theme="light"]`) |
