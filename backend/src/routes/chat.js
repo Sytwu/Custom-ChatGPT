@@ -44,6 +44,23 @@ router.post("/stream", async (req, res, next) => {
   }
   fullMessages.push(...cleanMessages);
 
+  // Some models (e.g. Gemma) require strict user/assistant alternation.
+  // Merge consecutive messages of the same role to satisfy this constraint.
+  let finalMessages = fullMessages;
+  if (noSystemRole) {
+    finalMessages = [];
+    for (const msg of fullMessages) {
+      const prev = finalMessages[finalMessages.length - 1];
+      if (prev && prev.role === msg.role) {
+        const a = typeof prev.content === "string" ? prev.content : JSON.stringify(prev.content);
+        const b = typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
+        finalMessages[finalMessages.length - 1] = { role: prev.role, content: `${a}\n\n${b}` };
+      } else {
+        finalMessages.push(msg);
+      }
+    }
+  }
+
   // Set SSE headers
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -57,7 +74,7 @@ router.post("/stream", async (req, res, next) => {
   });
 
   try {
-    const stream = await streamChat(fullMessages, model, temperature, maxTokens, apiKey);
+    const stream = await streamChat(finalMessages, model, temperature, maxTokens, apiKey);
 
     for await (const chunk of stream) {
       if (done) break;

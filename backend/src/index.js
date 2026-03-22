@@ -12,7 +12,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
   : "*";
 app.use(cors({ origin: allowedOrigins }));
-app.use(express.json({ limit: "20mb" }));
+app.use(express.json({ limit: "50mb" }));
 
 // Health check
 app.get("/api/health", (_req, res) => {

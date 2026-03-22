@@ -38,10 +38,11 @@ const components = {
 };
 
 export function MarkdownContent({ content }) {
+  const normalized = content.replace(/\n{3,}/g, "\n\n");
   return (
     <div className="markdown-body">
       <ReactMarkdown rehypePlugins={rehypePlugins} components={components}>
-        {content}
+        {normalized}
       </ReactMarkdown>
     </div>
   );

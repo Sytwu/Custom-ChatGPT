@@ -26,8 +26,13 @@ async function extractPDF(file) {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    text += content.items.map((item) => item.str).join(" ") + "\n";
+    const pageText = content.items
+      .map((item) => item.str.trim())
+      .filter(Boolean)
+      .join(" ");
+    if (pageText) text += pageText + "\n\n";
   }
+  text = text.replace(/\n{3,}/g, "\n\n").trim();
   let truncated = false;
   if (text.length > MAX_CHARS) {
     text = text.slice(0, MAX_CHARS);

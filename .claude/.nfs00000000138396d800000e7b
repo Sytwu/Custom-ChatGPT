@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(cat /project2/cookies/Custom-ChatGPT/openspec/*)",
-      "Bash(openspec --version)"
-    ]
-  }
-}

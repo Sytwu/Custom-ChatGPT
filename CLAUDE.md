@@ -48,7 +48,7 @@ There are no test or lint commands configured.
 Both `llm.js` and `useChat.js` maintain identical `NVIDIA_PREFIXES` arrays — keep them in sync when adding providers.
 
 Special cases in `routes/chat.js`:
-- `google/gemma` models don't support system role — the system prompt is prepended to the first user message instead.
+- `google/gemma` models don't support system role — the system prompt is prepended to the first user message instead. They also require strict user/assistant alternation — consecutive same-role messages are merged (content joined with `\n\n`) before the request is sent.
 - Message `content` may be a **string or an array** (OpenAI vision format for image attachments); the backend passes it through as-is.
 
 Both providers expose `streamChat()` and `completeChat()` (non-streaming) in their service files. `llm.js` dispatches both.
@@ -75,7 +75,7 @@ Message objects store `{ role, content, attachmentName, attachmentText, attachme
 - **Text attachment** → appends file content as a fenced block to the content string
 - **Image attachment** → returns OpenAI vision array format `[{type:"text",...}, {type:"image_url",...}]`
 
-File extraction (`utils/fileExtractor.js`) supports PDF (via `pdfjs-dist`), plain text, and code/data files up to 50K characters. Images are read as base64 data URLs via `FileReader.readAsDataURL` directly in `InputBar.jsx`. The backend JSON body limit is 20 MB to accommodate base64 images.
+File extraction (`utils/fileExtractor.js`) supports PDF (via `pdfjs-dist`), plain text, and code/data files up to 50K characters. PDF text is normalized (empty items filtered, consecutive newlines collapsed) before being sent to the LLM. Images are compressed via Canvas API in `InputBar.jsx` before encoding — resized to max 1920px on the long edge and converted to JPEG at 85% quality. The backend JSON body limit is 50 MB.
 
 ### Discord Mode
 Per-conversation toggle (`conversation.discordMode`). When active:
@@ -113,6 +113,9 @@ Keys can be supplied per-request from the frontend (stored in React state / loca
 
 ### Sidebar & Drag-Drop
 `ConversationSidebar.jsx` uses `@dnd-kit/core` (PointerSensor) to allow dragging conversations into groups. Groups are rendered via `GroupRow.jsx` as droppable zones with collapse, color picker, rename/delete, and a RAG toggle. Conversation colors come from a 10-color `PALETTE` in `constants/colors.js`.
+
+### Markdown Rendering
+Assistant messages are rendered via `MarkdownContent.jsx` (ReactMarkdown + rehype-highlight). **Do not apply `white-space: pre-wrap` to `.message-bubble` broadly** — it causes every `\n` in LLM output to render as a hard line break, bypassing markdown parsing. `pre-wrap` is scoped only to `.message-bubble.user`. `MarkdownContent` normalizes 3+ consecutive newlines to 2 before passing content to ReactMarkdown.
 
 ### Error Handling
 - **Backend**: SSE errors are streamed as `data: {"error":"..."}\n\n` then closed with `[DONE]`, so the client always gets a clean terminal event
