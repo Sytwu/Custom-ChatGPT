@@ -26,31 +26,6 @@ gh repo create custom-chatgpt --public --push
 
 ---
 
-## Step 2a — Set Up Google OAuth (for Long-term Memory)
-
-> Skip this step if you don't need the long-term memory feature.
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com) and create or select a project.
-2. Navigate to **APIs & Services → Credentials**.
-3. Click **Create Credentials → OAuth 2.0 Client ID**.
-4. Set **Application type** to **Web application**.
-5. Under **Authorized redirect URIs**, add:
-   ```
-   https://custom-chatgpt-backend.onrender.com/api/auth/google/callback
-   ```
-   *(Replace with your actual Render backend URL from Step 2)*
-6. For local development, also add:
-   ```
-   http://localhost:3001/api/auth/google/callback
-   ```
-7. Click **Create**. Copy the **Client ID** and **Client Secret**.
-8. Set these as environment variables in Render (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).
-9. After deploying the frontend (Step 3), set `FRONTEND_URL` in Render to your Vercel URL.
-
-> **Note:** Memory data is stored in the container's local filesystem (`backend/data/memories/`). On Render's free tier, this resets on every deploy. For persistence, upgrade to a Render Disk or migrate to an external database.
-
----
-
 ## Step 2 — Deploy Backend on Render
 
 1. Go to [render.com](https://render.com) and sign up / log in with GitHub.
@@ -60,21 +35,65 @@ gh repo create custom-chatgpt --public --push
    - **Runtime**: Docker
    - **Dockerfile path**: `./backend/Dockerfile`
    - **Docker context**: `./backend`
-5. Under **Environment Variables**, add:
+5. Under **Environment Variables**, add all of the following:
+
    | Key | Value |
    |-----|-------|
    | `PORT` | `3001` |
    | `ALLOWED_ORIGINS` | *(fill in after Vercel deploy — see Step 4)* |
-   | `GROQ_API_KEY` | *(optional — users can enter keys in the UI)* |
-   | `NVIDIA_API_KEY` | *(optional — users can enter keys in the UI)* |
+   | `GROQ_API_KEY` | *(optional — users can also enter keys in the UI)* |
+   | `NVIDIA_API_KEY` | *(optional — users can also enter keys in the UI)* |
    | `GOOGLE_CLIENT_ID` | *(from Google Cloud Console — see Step 2a)* |
    | `GOOGLE_CLIENT_SECRET` | *(from Google Cloud Console — see Step 2a)* |
    | `JWT_SECRET` | *(random string — run `openssl rand -base64 32`)* |
    | `FRONTEND_URL` | *(your Vercel URL — fill in after Step 3)* |
-6. Click **Deploy**. Wait for the build to succeed.
-7. Copy the **public URL** (e.g. `https://custom-chatgpt-backend.onrender.com`).
+   | `BACKEND_URL` | *(your Render service URL, e.g. `https://custom-chatgpt-backend.onrender.com`)* |
+   | `FIREBASE_PROJECT_ID` | *(from Firebase Console — see Step 2b)* |
+   | `FIREBASE_CLIENT_EMAIL` | *(from Firebase service account JSON — see Step 2b)* |
+   | `FIREBASE_PRIVATE_KEY` | *(from Firebase service account JSON — paste with literal `\n`, see Step 2b)* |
 
-> **Note:** Render free tier spins down after 15 minutes of inactivity. The first request after sleep takes ~30 seconds. Upgrade to a paid plan for always-on.
+6. Click **Deploy**. Wait for the build to succeed.
+7. Copy the **public URL** (e.g. `https://custom-chatgpt-backend.onrender.com`). You'll need it for Steps 2a and 3.
+
+> **Note:** Render free tier spins down after 15 minutes of inactivity. The first request after sleep takes ~30 seconds.
+
+---
+
+## Step 2a — Set Up Google OAuth (required for Long-term Memory login)
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) and create or select a project.
+2. Navigate to **APIs & Services → Credentials**.
+3. Click **Create Credentials → OAuth 2.0 Client ID**.
+4. Set **Application type** to **Web application**.
+5. Under **Authorized redirect URIs**, add your Render backend callback URL:
+   ```
+   https://custom-chatgpt-backend.onrender.com/api/auth/google/callback
+   ```
+   For local development also add:
+   ```
+   http://localhost:3001/api/auth/google/callback
+   ```
+6. Click **Create**. Copy the **Client ID** and **Client Secret**.
+7. In the Render dashboard, set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to these values.
+
+---
+
+## Step 2b — Set Up Firebase Firestore (required for Long-term Memory persistence)
+
+1. Go to [Firebase Console](https://console.firebase.google.com) → **Add project** (or select an existing one).
+2. In the left sidebar, click **Build → Firestore Database → Create database**.
+   - Choose **Production mode**.
+   - Select a region (e.g. `asia-east1`).
+3. Go to **Project Settings** (gear icon) → **Service accounts** tab.
+4. Click **Generate new private key** → **Generate key**. A JSON file will download.
+5. Open the JSON file and copy these three values into Render env vars:
+   | Render key | JSON field |
+   |---|---|
+   | `FIREBASE_PROJECT_ID` | `project_id` |
+   | `FIREBASE_CLIENT_EMAIL` | `client_email` |
+   | `FIREBASE_PRIVATE_KEY` | `private_key` (paste the full string including `-----BEGIN PRIVATE KEY-----` — Render stores `\n` literally, the backend handles this automatically) |
+
+> **Security:** The service account JSON contains sensitive credentials — never commit it to git.
 
 ---
 
@@ -90,49 +109,58 @@ gh repo create custom-chatgpt --public --push
 6. Under **Environment Variables**, add:
    | Key | Value |
    |-----|-------|
-   | `VITE_API_URL` | `https://custom-chatgpt-backend.onrender.com` ← your Render URL from Step 2 |
+   | `VITE_API_URL` | Your Render backend URL (e.g. `https://custom-chatgpt-backend.onrender.com`) |
 7. Click **Deploy**. Wait for the build to succeed.
 8. Copy the **public URL** (e.g. `https://custom-chatgpt.vercel.app`).
 
 ---
 
-## Step 4 — Connect CORS (Backend ↔ Frontend)
+## Step 4 — Connect Backend ↔ Frontend
 
-1. Go back to Render → your backend service → **Environment**.
-2. Set `ALLOWED_ORIGINS` to your Vercel URL:
-   ```
-   https://custom-chatgpt.vercel.app
-   ```
-3. Click **Save Changes** — Render will redeploy automatically.
+After you have both URLs, update these Render env vars (Dashboard → Environment → Save Changes):
+
+| Key | Value |
+|-----|-------|
+| `FRONTEND_URL` | Your Vercel URL (e.g. `https://custom-chatgpt.vercel.app`) |
+| `ALLOWED_ORIGINS` | Same Vercel URL |
+
+Render will redeploy automatically after saving.
 
 ---
 
 ## Step 5 — Verify
 
 1. Open your Vercel URL in a browser.
-2. Go to Settings (right sidebar) → enter a Groq or NVIDIA API key.
-3. Send a message — you should get a streaming response.
-4. Check the browser Network tab to confirm requests go to your Render backend URL.
+2. Click **登入 / Login** — you should be redirected to Google's consent screen.
+3. After login you should return to the app with your name shown in the top bar.
+4. Go to Settings → enter a Groq or NVIDIA API key → send a message.
+5. After chatting, click 🧠 to extract memories — they should persist across page reloads.
 
 ---
 
-## Local Development (unchanged)
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|-------------|-----|
+| `Cannot GET /api/auth/google` | `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` not set, or Render deployment failed | Check Render dashboard logs; verify env vars are saved |
+| Login redirects to `undefined/?token=…` | `FRONTEND_URL` not set in Render | Add `FRONTEND_URL` in Render env vars |
+| Login button does nothing / goes to Vercel 404 | `VITE_API_URL` not set in Vercel | Add `VITE_API_URL` in Vercel env vars and **redeploy** |
+| `OAuth redirect_uri_mismatch` from Google | `BACKEND_URL` env var doesn't match Google Cloud Console URI | Make sure the Authorized redirect URI in Google Console matches `${BACKEND_URL}/api/auth/google/callback` exactly |
+| Memory won't save / Firebase error | Firebase credentials missing or wrong | Check `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` in Render |
+| Render service crashes on startup | Missing or malformed env var | Check Render → Logs tab for the error message |
+
+---
+
+## Local Development
 
 ```bash
 # Terminal 1 — backend
-cd backend && npm install && npm run dev
+cd backend && cp .env.example .env   # fill in API keys
+npm install && npm run dev
 
 # Terminal 2 — frontend
 cd frontend && npm install && npm run dev
 ```
 
 The Vite dev server proxies `/api/*` to `http://localhost:3001` automatically.
-`VITE_API_URL` is empty in dev so relative paths are used.
-
----
-
-## Auto-Deploy on Push
-
-Both Vercel and Render watch your GitHub `main` branch. Every `git push` triggers a new deploy automatically — no extra CI/CD configuration needed.
-
-If you want to protect `main` and deploy only from PRs, configure branch protection rules in GitHub Settings → Branches.
+`VITE_API_URL` should be empty (or unset) in local `.env` so relative paths are used.

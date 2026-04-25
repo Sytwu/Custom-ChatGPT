@@ -8,12 +8,13 @@ const router = express.Router();
 const oauthEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
 if (oauthEnabled) {
+  const backendBase = process.env.BACKEND_URL || "http://localhost:3001";
   passport.use(
     new GoogleStrategy(
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: "/api/auth/google/callback",
+        callbackURL: `${backendBase}/api/auth/google/callback`,
       },
       (_accessToken, _refreshToken, profile, done) => {
         done(null, profile);
