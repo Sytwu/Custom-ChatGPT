@@ -186,6 +186,30 @@ export function reducer(state, action) {
         ),
       };
 
+    case ACTIONS.COMPRESS_CONVERSATION:
+      return {
+        ...state,
+        conversations: state.conversations.map((c) =>
+          c.id === action.payload.id
+            ? {
+                ...c,
+                messages: [{
+                  id: makeId(),
+                  role: "assistant",
+                  content: action.payload.summary,
+                  compressed: true,
+                  reactions: {},
+                  replyTo: null,
+                  stickerUrl: null,
+                  stickerDescription: null,
+                  timestamp: Date.now(),
+                }],
+                titleLocked: true,
+              }
+            : c
+        ),
+      };
+
     // ── Messaging ────────────────────────────────────────────────────
     // payload: { content, attachmentName?, attachmentText?, attachmentImageData?, replyTo?, stickerUrl?, stickerDescription? }
     case ACTIONS.ADD_USER_MESSAGE:

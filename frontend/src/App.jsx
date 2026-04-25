@@ -6,6 +6,7 @@ import { SettingsSidebar } from "./components/layout/SettingsSidebar.jsx";
 import { useAppContext } from "./hooks/useAppContext.js";
 import { ACTIONS } from "./context/actions.js";
 import { useT } from "./i18n/useT.js";
+import { LoginButton } from "./components/auth/LoginButton.jsx";
 
 function HeaderControls() {
   const { state, dispatch } = useAppContext();
@@ -29,6 +30,7 @@ function HeaderControls() {
       >
         {isZH ? "EN" : "中"}
       </button>
+      <LoginButton />
     </div>
   );
 }

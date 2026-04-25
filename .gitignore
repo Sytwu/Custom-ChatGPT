@@ -1,6 +1,9 @@
 # === Secrets (NEVER commit these) ===
 backend/.env
 
+# === User data ===
+backend/data/memories/
+
 # === Dependencies ===
 node_modules/
 backend/node_modules/

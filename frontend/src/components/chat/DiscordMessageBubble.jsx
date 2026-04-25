@@ -3,6 +3,9 @@ import { useAppContext } from "../../hooks/useAppContext.js";
 import { ACTIONS } from "../../context/actions.js";
 import { MarkdownContent } from "./MarkdownContent.jsx";
 import { useT } from "../../i18n/useT.js";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { useMemory } from "../../hooks/useMemory.js";
+import { getActiveMessages, apiContent } from "../../context/reducer.js";
 
 const AVATAR_COLORS = {
   user: "#7c6af7",
@@ -51,10 +54,30 @@ function ReactionPicker({ messageId }) {
 }
 
 export function DiscordMessageBubble({ message, grouped, onReply, allMessages, pending = false }) {
-  const { dispatch } = useAppContext();
+  const { dispatch, state } = useAppContext();
   const t = useT();
+  const { isLoggedIn } = useAuth();
+  const { extractMemories } = useMemory();
   const [hovering, setHovering] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [extracting, setExtracting] = useState(false);
+
+  async function handleExtract() {
+    if (extracting) return;
+    setExtracting(true);
+    try {
+      const messages = getActiveMessages(state).map((m) => ({ role: m.role, content: apiContent(m) }));
+      const result = await extractMemories(messages, state.model, state.groqApiKey || state.nvidiaApiKey);
+      const count = result?.extracted?.length ?? 0;
+      setToast(count > 0 ? t("memoryExtracted", count) : t("noNewMemory"));
+    } catch {
+      setToast(t("memoryExtractFailed"));
+    } finally {
+      setExtracting(false);
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
 
   const isUser = message.role === "user";
   const username = isUser ? "You" : "Assistant";
@@ -104,6 +127,11 @@ export function DiscordMessageBubble({ message, grouped, onReply, allMessages, p
               {repliedMsg?.role === "user" ? "You" : "Assistant"}: {replySnippet}
             </span>
           </div>
+        )}
+
+        {/* Compressed badge for summarised messages */}
+        {message.compressed && (
+          <span className="compressed-badge">⚡ 已壓縮</span>
         )}
 
         {/* Message content */}
@@ -179,8 +207,19 @@ export function DiscordMessageBubble({ message, grouped, onReply, allMessages, p
           >
             ↩
           </button>
+          {!isUser && !message.compressed && isLoggedIn && (
+            <button
+              className="discord-hover-btn"
+              title={t("extractMemory")}
+              onClick={handleExtract}
+              disabled={extracting}
+            >
+              🧠
+            </button>
+          )}
         </div>
       )}
+      {toast && <div className="extract-toast discord-extract-toast">{toast}</div>}
     </div>
   );
 }

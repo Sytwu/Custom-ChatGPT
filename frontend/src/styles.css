@@ -104,6 +104,7 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  overflow-x: hidden;
   flex-shrink: 0;
   transition: width 0.2s ease;
 }
@@ -1548,4 +1549,217 @@ hr { border: none; border-top: 1px solid var(--border); }
   display: flex;
   align-items: center;
 }
+
+/* ── Auth: Login / Logout ────────────────────────────────────────── */
+.login-section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+.login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.login-btn:hover { background: var(--surface3, var(--surface2)); filter: brightness(1.1); }
+.login-user {
+  font-size: 12px;
+  color: var(--text-muted, #888);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.logout-btn {
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--text-muted, #888);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.logout-btn:hover { color: var(--error, #f44); border-color: var(--error, #f44); }
+
+/* ── Extract Memory Button ───────────────────────────────────────── */
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.extract-memory-btn {
+  padding: 3px 10px;
+  background: transparent;
+  color: var(--text-muted, #888);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.extract-memory-btn:hover { color: var(--accent); border-color: var(--accent); }
+.extract-memory-btn:disabled { opacity: 0.5; cursor: default; }
+.compressed-badge { font-size: 11px; color: var(--text-muted); opacity: 0.6; }
+.extract-toast {
+  font-size: 12px;
+  color: var(--accent);
+  animation: fade-in 0.2s ease;
+}
+.discord-extract-toast {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--accent);
+  white-space: nowrap;
+  z-index: 10;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Settings Tabs ───────────────────────────────────────────────── */
+.settings-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.settings-tab-btn {
+  flex: 1;
+  padding: 8px 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted, #888);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.settings-tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Memory Settings Panel ───────────────────────────────────────── */
+.memory-settings-section {
+  padding: 10px 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.memory-login-hint {
+  font-size: 13px;
+  color: var(--text-muted, #888);
+  text-align: center;
+  padding: 20px 8px;
+}
+.memory-add-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  min-width: 0;
+}
+.memory-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+}
+.memory-add-btn {
+  padding: 6px 10px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.memory-add-btn:disabled { opacity: 0.5; cursor: default; }
+.memory-error {
+  font-size: 12px;
+  color: var(--error, #f44);
+  margin-bottom: 8px;
+}
+.memory-empty {
+  font-size: 13px;
+  color: var(--text-muted, #888);
+  text-align: center;
+  padding: 16px 8px;
+}
+.memory-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.memory-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 2px 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  position: relative;
+}
+.memory-item-content {
+  font-size: 13px;
+  color: var(--text);
+  grid-column: 1;
+  grid-row: 1;
+  word-break: break-word;
+}
+.memory-item-meta {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.memory-source-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.memory-source-badge.manual { background: rgba(124, 106, 247, 0.15); color: var(--accent); }
+.memory-source-badge.auto   { background: rgba(76, 175, 80, 0.15);  color: #4caf50; }
+.memory-date {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+}
+.memory-delete-btn {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #888);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.memory-delete-btn:hover { color: var(--error, #f44); }
 

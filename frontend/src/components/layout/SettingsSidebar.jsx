@@ -4,11 +4,15 @@ import { SystemPromptInput } from "../settings/SystemPromptInput.jsx";
 import { TemperatureSlider } from "../settings/TemperatureSlider.jsx";
 import { MaxTokensInput } from "../settings/MaxTokensInput.jsx";
 import { MemoryControls } from "../settings/MemoryControls.jsx";
+import { MemorySettings } from "../settings/MemorySettings.jsx";
 import { ApiKeyInputs } from "../settings/ApiKeyInputs.jsx";
 import { useT } from "../../i18n/useT.js";
 
+const TABS = ["settings", "memory"];
+
 export function SettingsSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState("settings");
   const t = useT();
 
   return (
@@ -25,18 +29,38 @@ export function SettingsSidebar() {
       </div>
 
       {!collapsed && (
-        <div className="sidebar-content">
-          <ApiKeyInputs />
-          <hr />
-          <ModelSelector />
-          <hr />
-          <SystemPromptInput />
-          <hr />
-          <TemperatureSlider />
-          <MaxTokensInput />
-          <hr />
-          <MemoryControls />
-        </div>
+        <>
+          <div className="settings-tabs">
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                className={`settings-tab-btn${activeTab === tab ? " active" : ""}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab === "settings" ? t("settings") : t("memory")}
+              </button>
+            ))}
+          </div>
+
+          <div className="sidebar-content">
+            {activeTab === "settings" ? (
+              <>
+                <ApiKeyInputs />
+                <hr />
+                <ModelSelector />
+                <hr />
+                <SystemPromptInput />
+                <hr />
+                <TemperatureSlider />
+                <MaxTokensInput />
+                <hr />
+                <MemoryControls />
+              </>
+            ) : (
+              <MemorySettings />
+            )}
+          </div>
+        </>
       )}
     </aside>
   );

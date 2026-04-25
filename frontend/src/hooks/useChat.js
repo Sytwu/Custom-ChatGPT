@@ -3,6 +3,8 @@ import { useAppContext } from "./useAppContext.js";
 import { ACTIONS } from "../context/actions.js";
 import { getActiveMessages, apiContent } from "../context/reducer.js";
 import { fetchRagContext } from "./useRag.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useMemory, buildMemoryPrompt } from "./useMemory.js";
 
 const NVIDIA_PREFIXES = [
   "nvidia/", "meta/", "mistralai/", "google/", "microsoft/",
@@ -26,6 +28,8 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 export function useChat() {
   const { state, dispatch } = useAppContext();
+  const { isLoggedIn } = useAuth();
+  const { fetchMemories } = useMemory();
   const abortControllerRef = useRef(null);
 
   function stopStream() {
@@ -87,6 +91,13 @@ export function useChat() {
 
     const apiKey = isNvidiaModel(state.model) ? state.nvidiaApiKey : state.groqApiKey;
 
+    // Long-term memory: fetch and prepend to system prompt if logged in
+    let memoryPrefix = "";
+    if (isLoggedIn) {
+      const memories = await fetchMemories().catch(() => []);
+      memoryPrefix = buildMemoryPrompt(memories);
+    }
+
     // RAG: if the active conversation is in a RAG-enabled group, fetch relevant context
     let ragPrefix = "";
     const activeConv = state.conversations.find((c) => c.id === state.activeConversationId);
@@ -116,7 +127,7 @@ export function useChat() {
         : "";
       const body = {
         model: state.model,
-        systemPrompt: discordPrefix + extraSystemPrompt + ragPrefix + state.systemPrompt,
+        systemPrompt: memoryPrefix + discordPrefix + extraSystemPrompt + ragPrefix + state.systemPrompt,
         messages: apiMessages,
         temperature: state.temperature,
         maxTokens: state.maxTokens,
@@ -241,7 +252,14 @@ export function useChat() {
       });
     });
 
-    // 4. RAG
+    // 4. Long-term memory
+    let memoryPrefixBatch = "";
+    if (isLoggedIn) {
+      const memories = await fetchMemories().catch(() => []);
+      memoryPrefixBatch = buildMemoryPrompt(memories);
+    }
+
+    // 5. RAG
     const activeConv = state.conversations.find((c) => c.id === state.activeConversationId);
     let ragPrefix = "";
     if (activeConv?.groupId) {
@@ -268,7 +286,7 @@ export function useChat() {
       const apiKey = isNvidiaModel(state.model) ? state.nvidiaApiKey : state.groqApiKey;
       const body = {
         model: state.model,
-        systemPrompt: discordPrefix + ragPrefix + state.systemPrompt,
+        systemPrompt: memoryPrefixBatch + discordPrefix + ragPrefix + state.systemPrompt,
         messages: apiMessages,
         temperature: state.temperature,
         maxTokens: state.maxTokens,

@@ -26,6 +26,31 @@ gh repo create custom-chatgpt --public --push
 
 ---
 
+## Step 2a — Set Up Google OAuth (for Long-term Memory)
+
+> Skip this step if you don't need the long-term memory feature.
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) and create or select a project.
+2. Navigate to **APIs & Services → Credentials**.
+3. Click **Create Credentials → OAuth 2.0 Client ID**.
+4. Set **Application type** to **Web application**.
+5. Under **Authorized redirect URIs**, add:
+   ```
+   https://custom-chatgpt-backend.onrender.com/api/auth/google/callback
+   ```
+   *(Replace with your actual Render backend URL from Step 2)*
+6. For local development, also add:
+   ```
+   http://localhost:3001/api/auth/google/callback
+   ```
+7. Click **Create**. Copy the **Client ID** and **Client Secret**.
+8. Set these as environment variables in Render (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).
+9. After deploying the frontend (Step 3), set `FRONTEND_URL` in Render to your Vercel URL.
+
+> **Note:** Memory data is stored in the container's local filesystem (`backend/data/memories/`). On Render's free tier, this resets on every deploy. For persistence, upgrade to a Render Disk or migrate to an external database.
+
+---
+
 ## Step 2 — Deploy Backend on Render
 
 1. Go to [render.com](https://render.com) and sign up / log in with GitHub.
@@ -42,6 +67,10 @@ gh repo create custom-chatgpt --public --push
    | `ALLOWED_ORIGINS` | *(fill in after Vercel deploy — see Step 4)* |
    | `GROQ_API_KEY` | *(optional — users can enter keys in the UI)* |
    | `NVIDIA_API_KEY` | *(optional — users can enter keys in the UI)* |
+   | `GOOGLE_CLIENT_ID` | *(from Google Cloud Console — see Step 2a)* |
+   | `GOOGLE_CLIENT_SECRET` | *(from Google Cloud Console — see Step 2a)* |
+   | `JWT_SECRET` | *(random string — run `openssl rand -base64 32`)* |
+   | `FRONTEND_URL` | *(your Vercel URL — fill in after Step 3)* |
 6. Click **Deploy**. Wait for the build to succeed.
 7. Copy the **public URL** (e.g. `https://custom-chatgpt-backend.onrender.com`).
 

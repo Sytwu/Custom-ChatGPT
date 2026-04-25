@@ -1,8 +1,36 @@
-import React from "react";
+import React, { useState } from "react";
 import { MarkdownContent } from "./MarkdownContent.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { useMemory } from "../../hooks/useMemory.js";
+import { useAppContext } from "../../hooks/useAppContext.js";
+import { getActiveMessages, apiContent } from "../../context/reducer.js";
+import { useT } from "../../i18n/useT.js";
 
 export function MessageBubble({ message }) {
   const isUser = message.role === "user";
+  const { isLoggedIn } = useAuth();
+  const { extractMemories } = useMemory();
+  const { state } = useAppContext();
+  const t = useT();
+  const [toast, setToast] = useState(null);
+  const [extracting, setExtracting] = useState(false);
+
+  async function handleExtract() {
+    if (extracting) return;
+    setExtracting(true);
+    try {
+      const messages = getActiveMessages(state).map((m) => ({ role: m.role, content: apiContent(m) }));
+      const result = await extractMemories(messages, state.model, state.groqApiKey || state.nvidiaApiKey);
+      const count = result?.extracted?.length ?? 0;
+      setToast(count > 0 ? t("memoryExtracted", count) : t("noNewMemory"));
+    } catch {
+      setToast(t("memoryExtractFailed"));
+    } finally {
+      setExtracting(false);
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
+
   return (
     <div className={`message-bubble ${isUser ? "user" : "assistant"}`}>
       <div className="message-role">{isUser ? "You" : "Assistant"}</div>
@@ -30,6 +58,24 @@ export function MessageBubble({ message }) {
           <MarkdownContent content={message.content} />
         )}
       </div>
+      {!isUser && message.compressed && (
+        <div className="message-actions">
+          <span className="compressed-badge">⚡ 已壓縮</span>
+        </div>
+      )}
+      {!isUser && !message.compressed && isLoggedIn && (
+        <div className="message-actions">
+          <button
+            className="extract-memory-btn"
+            title={t("extractMemory")}
+            onClick={handleExtract}
+            disabled={extracting}
+          >
+            🧠 {t("extractMemory")}
+          </button>
+          {toast && <span className="extract-toast">{toast}</span>}
+        </div>
+      )}
     </div>
   );
 }

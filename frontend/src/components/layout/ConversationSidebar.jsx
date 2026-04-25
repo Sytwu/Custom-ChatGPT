@@ -23,14 +23,17 @@ function formatDate(ts, t) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
 function ConversationItem({ conv, isActive, onSwitch, isStreaming }) {
-  const { dispatch } = useAppContext();
+  const { dispatch, state } = useAppContext();
   const t = useT();
   const [hovering, setHovering] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [editTitle, setEditTitle] = useState(conv.title);
+  const [compressing, setCompressing] = useState(false);
   const inputRef = useRef(null);
 
   const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
@@ -61,6 +64,30 @@ function ConversationItem({ conv, isActive, onSwitch, isStreaming }) {
   function handleDelete() {
     dispatch({ type: ACTIONS.DELETE_CONVERSATION, payload: conv.id });
     setConfirmDelete(false);
+  }
+
+  async function handleCompress() {
+    if (!window.confirm(t("compressConfirm"))) return;
+    setCompressing(true);
+    try {
+      const messages = conv.messages.map((m) => ({
+        role: m.role,
+        content: typeof m.content === "string" ? m.content : String(m.content),
+      }));
+      const res = await fetch(`${API_BASE}/api/compress`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages, model: state.model, apiKey: state.groqApiKey || state.nvidiaApiKey }),
+      });
+      if (!res.ok) throw new Error("failed");
+      const { summary } = await res.json();
+      if (!summary?.trim()) throw new Error("empty");
+      dispatch({ type: ACTIONS.COMPRESS_CONVERSATION, payload: { id: conv.id, summary } });
+    } catch {
+      alert(t("compressFailed"));
+    } finally {
+      setCompressing(false);
+    }
   }
 
   const borderColor = conv.color ?? "transparent";
@@ -129,6 +156,12 @@ function ConversationItem({ conv, isActive, onSwitch, isStreaming }) {
             title={t("rename")}
             onClick={() => setRenaming(true)}
           >✏️</button>
+          <button
+            className="conv-action-btn"
+            title={t("compressConv")}
+            onClick={handleCompress}
+            disabled={compressing || conv.messages.length === 0}
+          >{compressing ? "⏳" : "⚡"}</button>
           <button
             className="conv-action-btn"
             title={t("deleteConv")}

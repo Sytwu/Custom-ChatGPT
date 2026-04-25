@@ -86,6 +86,10 @@ export const translations = {
     colour: "顏色",
     rename: "重新命名",
     deleteConv: "刪除",
+    compressConv: "壓縮對話",
+    compressing: "壓縮中…",
+    compressConfirm: "壓縮後舊訊息將刪除，確定嗎？",
+    compressFailed: "壓縮失敗，請稍後再試",
 
     // Discord Mode
     discordModeBeta: "Discord 模式 (beta)",
@@ -98,6 +102,30 @@ export const translations = {
     sendAll: "全部送出",
     stickers: "貼圖",
     clearQueue: "清空佇列",
+
+    // Auth
+    loginWithGoogle: "使用 Google 登入",
+    logout: "登出",
+    loginRequired: "請先登入以使用記憶功能",
+    loggedInAs: "已登入：",
+
+    // Memory extraction
+    extractMemory: "萃取記憶",
+    memoryExtracted: (n) => `已新增 ${n} 條記憶`,
+    noNewMemory: "未找到新記憶",
+    memoryExtractFailed: "萃取失敗，請稍後再試",
+    memoryLimitReached: "記憶已達上限（50 條），請刪除舊記憶後再試",
+    memoryError: "操作失敗，請稍後再試",
+
+    // Memory settings
+    memory: "長期記憶",
+    memoryList: "記憶列表",
+    addMemory: "新增記憶",
+    memoryPlaceholder: "輸入要記住的事實…",
+    sourceManual: "手動",
+    sourceAuto: "自動",
+    deleteMemory: "刪除此記憶",
+    noMemories: "尚無記憶。對話後按「萃取記憶」可自動新增。",
   },
 
   en: {
@@ -187,6 +215,10 @@ export const translations = {
     colour: "Colour",
     rename: "Rename",
     deleteConv: "Delete",
+    compressConv: "Compress",
+    compressing: "Compressing…",
+    compressConfirm: "Compressing will delete old messages. Continue?",
+    compressFailed: "Compress failed, please try again",
 
     // Discord Mode
     discordModeBeta: "Discord Mode (beta)",
@@ -199,5 +231,29 @@ export const translations = {
     sendAll: "Send All",
     stickers: "Stickers",
     clearQueue: "Clear Queue",
+
+    // Auth
+    loginWithGoogle: "Sign in with Google",
+    logout: "Sign out",
+    loginRequired: "Sign in to use memory features",
+    loggedInAs: "Signed in as ",
+
+    // Memory extraction
+    extractMemory: "Extract Memory",
+    memoryExtracted: (n) => `Added ${n} memory item${n !== 1 ? "s" : ""}`,
+    noNewMemory: "No new memories found",
+    memoryExtractFailed: "Extract failed, please try again",
+    memoryLimitReached: "Memory limit reached (50). Please delete old memories first.",
+    memoryError: "Operation failed, please try again",
+
+    // Memory settings
+    memory: "Memory",
+    memoryList: "Memory List",
+    addMemory: "Add",
+    memoryPlaceholder: "Enter a fact…",
+    sourceManual: "Manual",
+    sourceAuto: "Auto",
+    deleteMemory: "Delete",
+    noMemories: "No memories yet. Extract memory after a conversation to add some.",
   },
 };

@@ -10,8 +10,13 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "firebase-admin": "^13.8.0",
     "groq-sdk": "^0.5.0",
-    "openai": "^4.52.0"
+    "jsonwebtoken": "^9.0.2",
+    "openai": "^4.52.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
