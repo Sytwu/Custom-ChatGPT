@@ -136,6 +136,7 @@ export function useChat() {
         messages: apiMessages,
         temperature: state.temperature,
         maxTokens: state.maxTokens,
+        toolsEnabled: state.toolsEnabled,
       };
       if (apiKey) body.apiKey = apiKey;
 
@@ -181,6 +182,12 @@ export function useChat() {
             }
             if (parsed.delta) {
               dispatch({ type: ACTIONS.APPEND_TOKEN, payload: parsed.delta });
+            }
+            if (parsed.toolCall) {
+              dispatch({ type: ACTIONS.ADD_TOOL_CALL, payload: { type: "call", ...parsed.toolCall } });
+            }
+            if (parsed.toolResult) {
+              dispatch({ type: ACTIONS.ADD_TOOL_CALL, payload: { type: "result", ...parsed.toolResult } });
             }
           } catch {
             // Ignore malformed SSE lines
@@ -293,6 +300,7 @@ export function useChat() {
         messages: apiMessages,
         temperature: state.temperature,
         maxTokens: state.maxTokens,
+        toolsEnabled: state.toolsEnabled,
       };
       if (apiKey) body.apiKey = apiKey;
 
@@ -327,6 +335,8 @@ export function useChat() {
             const parsed = JSON.parse(payload);
             if (parsed.error) { dispatch({ type: ACTIONS.STREAM_ERROR, payload: parsed.error }); return; }
             if (parsed.delta) dispatch({ type: ACTIONS.APPEND_TOKEN, payload: parsed.delta });
+            if (parsed.toolCall) dispatch({ type: ACTIONS.ADD_TOOL_CALL, payload: { type: "call", ...parsed.toolCall } });
+            if (parsed.toolResult) dispatch({ type: ACTIONS.ADD_TOOL_CALL, payload: { type: "result", ...parsed.toolResult } });
           } catch { /* ignore malformed SSE */ }
         }
       }

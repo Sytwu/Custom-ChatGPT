@@ -65,6 +65,15 @@ export const translations = {
     autoRoutingHint: "每次傳送訊息前，AI 會自動根據任務選擇最適合的模型。",
     routedModelLabel: "AI 選擇：",
 
+    // Tool use
+    toolUse: "AI 工具呼叫",
+    toolUseHint: "讓 AI 能主動搜尋網路或執行 Python 程式碼來回答問題。",
+    toolSearching: "正在搜尋…",
+    toolRunningCode: "正在執行程式碼…",
+    toolCallsLabel: "工具呼叫記錄",
+    toolCallsCollapse: "收起",
+    toolCallsExpand: "展開",
+
     // Input bar
     inputPlaceholder: "輸入訊息… (Enter 傳送，Shift+Enter 換行)",
     discordInputPlaceholder: "輸入訊息… (Enter 加入佇列，Shift+Enter 換行)",
@@ -197,6 +206,15 @@ export const translations = {
     autoRouting: "Auto Model Selection",
     autoRoutingHint: "AI automatically picks the best model for each message before sending.",
     routedModelLabel: "AI selected: ",
+
+    // Tool use
+    toolUse: "AI Tool Use",
+    toolUseHint: "Allow the AI to search the web or run Python code to answer questions.",
+    toolSearching: "Searching…",
+    toolRunningCode: "Running code…",
+    toolCallsLabel: "Tool calls",
+    toolCallsCollapse: "Collapse",
+    toolCallsExpand: "Expand",
 
     // Input bar
     inputPlaceholder: "Type a message… (Enter to send, Shift+Enter for newline)",

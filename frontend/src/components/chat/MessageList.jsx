@@ -62,15 +62,30 @@ export function MessageList({ onReply, pendingMessages = [] }) {
             />
           );
         })}
-        {state.isStreaming && (
-          <DiscordMessageBubble
-            message={{ id: "__streaming__", role: "assistant", content: state.streamingContent, timestamp: Date.now(), reactions: {}, replyTo: null }}
-            grouped={allVisible.length > 0 && allVisible[allVisible.length - 1].role === "assistant"}
-            onReply={() => {}}
-            allMessages={messages}
-            pending={false}
-          />
-        )}
+        {state.isStreaming && (() => {
+          const lastTool = state.streamingToolCalls[state.streamingToolCalls.length - 1];
+          const pendingToolName = lastTool?.type === "call" ? lastTool.name : null;
+          const streamContent = pendingToolName
+            ? state.streamingContent
+            : state.streamingContent;
+          return (
+            <DiscordMessageBubble
+              message={{
+                id: "__streaming__",
+                role: "assistant",
+                content: streamContent,
+                pendingToolName,
+                timestamp: Date.now(),
+                reactions: {},
+                replyTo: null,
+              }}
+              grouped={allVisible.length > 0 && allVisible[allVisible.length - 1].role === "assistant"}
+              onReply={() => {}}
+              allMessages={messages}
+              pending={false}
+            />
+          );
+        })()}
         <div ref={bottomRef} />
       </div>
     );
@@ -81,7 +96,17 @@ export function MessageList({ onReply, pendingMessages = [] }) {
       {messages.map((msg) => (
         <MessageBubble key={msg.id} message={msg} />
       ))}
-      {state.isStreaming && <StreamingBubble content={state.streamingContent} />}
+      {state.isStreaming && (
+        <StreamingBubble
+          content={state.streamingContent}
+          pendingToolName={
+            state.streamingToolCalls.length > 0 &&
+            state.streamingToolCalls[state.streamingToolCalls.length - 1].type === "call"
+              ? state.streamingToolCalls[state.streamingToolCalls.length - 1].name
+              : null
+          }
+        />
+      )}
       <div ref={bottomRef} />
     </div>
   );

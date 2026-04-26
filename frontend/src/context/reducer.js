@@ -41,6 +41,7 @@ export const initialState = {
   memoryEnabled: true,
   memoryCutoff: 10,
   autoRouting: false,
+  toolsEnabled: false,
   theme: "dark",
   language: "zh-TW",
 
@@ -53,6 +54,7 @@ export const initialState = {
   isStreaming: false,
   streamingContent: "",
   streamingModel: null,
+  streamingToolCalls: [],
 
   // UI
   error: null,
@@ -125,6 +127,15 @@ export function reducer(state, action) {
 
     case ACTIONS.SET_AUTO_ROUTING:
       return { ...state, autoRouting: action.payload };
+
+    case ACTIONS.SET_TOOLS_ENABLED:
+      return { ...state, toolsEnabled: action.payload };
+
+    case ACTIONS.ADD_TOOL_CALL:
+      return { ...state, streamingToolCalls: [...state.streamingToolCalls, action.payload] };
+
+    case ACTIONS.CLEAR_TOOL_CALLS:
+      return { ...state, streamingToolCalls: [] };
 
     // ── API Keys ─────────────────────────────────────────────────────
     case ACTIONS.SET_GROQ_KEY:
@@ -232,31 +243,36 @@ export function reducer(state, action) {
       ]);
 
     case ACTIONS.START_STREAM:
-      return { ...state, isStreaming: true, streamingContent: "", streamingModel: action.payload ?? null, error: null };
+      return { ...state, isStreaming: true, streamingContent: "", streamingModel: action.payload ?? null, streamingToolCalls: [], error: null };
 
     case ACTIONS.APPEND_TOKEN:
       return { ...state, streamingContent: state.streamingContent + action.payload };
 
     case ACTIONS.FINISH_STREAM: {
-      if (!state.streamingContent) return { ...state, isStreaming: false };
+      if (!state.streamingContent && state.streamingToolCalls.length === 0) {
+        return { ...state, isStreaming: false, streamingToolCalls: [] };
+      }
       const content = state.streamingContent;
+      const toolCalls = state.streamingToolCalls.length > 0 ? state.streamingToolCalls : null;
       const now = Date.now();
-      const newMessages = [content].map((part, i) => ({
+      const newMessage = {
         id: makeId(),
         role: "assistant",
-        content: part,
+        content,
         model: state.streamingModel ?? null,
+        toolCalls,
         replyTo: null,
         reactions: {},
         stickerUrl: null,
         stickerDescription: null,
-        timestamp: now + i,
-      }));
+        timestamp: now,
+      };
 
       return {
-        ...updateActiveMessages(state, (msgs) => [...msgs, ...newMessages]),
+        ...updateActiveMessages(state, (msgs) => [...msgs, newMessage]),
         isStreaming: false,
         streamingContent: "",
+        streamingToolCalls: [],
       };
     }
 
@@ -282,6 +298,7 @@ export function reducer(state, action) {
         memoryEnabled: p.memoryEnabled ?? state.memoryEnabled,
         memoryCutoff: p.memoryCutoff ?? state.memoryCutoff,
         autoRouting: p.autoRouting ?? state.autoRouting,
+        toolsEnabled: p.toolsEnabled ?? state.toolsEnabled,
         theme: p.theme ?? state.theme,
         language: p.language ?? state.language,
         conversations,

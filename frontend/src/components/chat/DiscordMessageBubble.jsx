@@ -6,6 +6,7 @@ import { useT } from "../../i18n/useT.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useMemory } from "../../hooks/useMemory.js";
 import { getActiveMessages, apiContent } from "../../context/reducer.js";
+import { ToolCallBlock } from "./ToolCallBlock.jsx";
 
 const AVATAR_COLORS = {
   user: "#7c6af7",
@@ -137,6 +138,11 @@ export function DiscordMessageBubble({ message, grouped, onReply, allMessages, p
           <span className="compressed-badge">⚡ 已壓縮</span>
         )}
 
+        {/* Tool call record */}
+        {!isUser && message.toolCalls && (
+          <ToolCallBlock toolCalls={message.toolCalls} />
+        )}
+
         {/* Message content */}
         <div className="discord-content">
           {isUser && message.stickerUrl ? (
@@ -166,7 +172,18 @@ export function DiscordMessageBubble({ message, grouped, onReply, allMessages, p
               )}
             </>
           ) : (
-            <MarkdownContent content={message.content} />
+            <>
+              {message.pendingToolName && (
+                <div className="tool-loading-indicator">
+                  {message.pendingToolName === "web_search"
+                    ? `🔍 ${t("toolSearching")}`
+                    : message.pendingToolName === "python_execute"
+                    ? `🐍 ${t("toolRunningCode")}`
+                    : `🔧 ${message.pendingToolName}…`}
+                </div>
+              )}
+              {message.content && <MarkdownContent content={message.content} />}
+            </>
           )}
         </div>
 

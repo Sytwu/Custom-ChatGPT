@@ -5,6 +5,7 @@ import { useMemory } from "../../hooks/useMemory.js";
 import { useAppContext } from "../../hooks/useAppContext.js";
 import { getActiveMessages, apiContent } from "../../context/reducer.js";
 import { useT } from "../../i18n/useT.js";
+import { ToolCallBlock } from "./ToolCallBlock.jsx";
 
 export function MessageBubble({ message }) {
   const isUser = message.role === "user";
@@ -63,6 +64,9 @@ export function MessageBubble({ message }) {
           <MarkdownContent content={message.content} />
         )}
       </div>
+      {!isUser && message.toolCalls && (
+        <ToolCallBlock toolCalls={message.toolCalls} />
+      )}
       {!isUser && message.compressed && (
         <div className="message-actions">
           <span className="compressed-badge">⚡ 已壓縮</span>

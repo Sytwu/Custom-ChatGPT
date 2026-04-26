@@ -47,10 +47,11 @@ export function AppProvider({ children }) {
       memoryEnabled: state.memoryEnabled,
       memoryCutoff: state.memoryCutoff,
       autoRouting: state.autoRouting,
+      toolsEnabled: state.toolsEnabled,
       theme: state.theme,
       language: state.language,
     });
-  }, [state.model, state.systemPrompt, state.temperature, state.maxTokens, state.memoryEnabled, state.memoryCutoff, state.autoRouting, state.theme, state.language]);
+  }, [state.model, state.systemPrompt, state.temperature, state.maxTokens, state.memoryEnabled, state.memoryCutoff, state.autoRouting, state.toolsEnabled, state.theme, state.language]);
 
   // Persist API keys changes
   useEffect(() => {

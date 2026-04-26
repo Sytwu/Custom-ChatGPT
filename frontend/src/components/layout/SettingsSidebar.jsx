@@ -5,6 +5,7 @@ import { TemperatureSlider } from "../settings/TemperatureSlider.jsx";
 import { MaxTokensInput } from "../settings/MaxTokensInput.jsx";
 import { MemoryControls } from "../settings/MemoryControls.jsx";
 import { RoutingSettings } from "../settings/RoutingSettings.jsx";
+import { ToolSettings } from "../settings/ToolSettings.jsx";
 import { MemorySettings } from "../settings/MemorySettings.jsx";
 import { ApiKeyInputs } from "../settings/ApiKeyInputs.jsx";
 import { useT } from "../../i18n/useT.js";
@@ -49,6 +50,7 @@ export function SettingsSidebar() {
                 <ApiKeyInputs />
                 <hr />
                 <RoutingSettings />
+                <ToolSettings />
                 <ModelSelector />
                 <hr />
                 <SystemPromptInput />

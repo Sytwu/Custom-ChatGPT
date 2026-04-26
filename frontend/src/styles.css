@@ -1774,3 +1774,96 @@ hr { border: none; border-top: 1px solid var(--border); }
 }
 .memory-delete-btn:hover { color: var(--error, #f44); }
 
+/* ── Tool Use ──────────────────────────────────────────────────── */
+.tool-loading-indicator {
+  font-size: 12px;
+  color: var(--accent);
+  padding: 4px 0 6px;
+  opacity: 0.85;
+}
+
+.tool-call-block {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+.tool-call-block-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 4px 10px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tool-call-pair {
+  border-bottom: 1px solid var(--border);
+}
+.tool-call-pair:last-child { border-bottom: none; }
+
+.tool-call-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 12px;
+}
+.tool-call-header:hover { background: var(--surface2); }
+
+.tool-call-icon { flex-shrink: 0; }
+.tool-call-name { font-weight: 600; flex-shrink: 0; }
+.tool-call-summary {
+  flex: 1;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-call-toggle {
+  font-size: 11px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.tool-call-body {
+  padding: 8px 10px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-call-section { display: flex; flex-direction: column; gap: 4px; }
+.tool-call-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tool-call-pre {
+  font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+  font-size: 11px;
+  background: var(--surface2);
+  padding: 6px 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+  color: var(--text);
+  margin: 0;
+}
+

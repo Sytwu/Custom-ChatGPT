@@ -235,6 +235,128 @@ cd frontend && npm run dev
 
 ---
 
+## 功能八：AI 工具呼叫（Tool Use）
+
+> **前置條件**：
+> 1. `backend/.env` 已設定 `TAVILY_API_KEY`（至 [tavily.com](https://tavily.com) 申請，免費 1,000 次/月）
+> 2. 右側設定欄 → 開啟「AI 工具呼叫」開關
+> 3. 使用支援 function calling 的模型：`llama-3.3-70b-versatile` 或 `llama-3.1-70b-versatile`
+
+### 背景原理
+
+開啟 Tool Use 後，每次送出訊息會走 **agentic loop**：
+1. 後端先用 non-streaming `completeChatWithTools()` 呼叫 LLM，附上 `web_search` 與 `python_execute` 兩個工具定義
+2. 若 LLM 回傳 `finish_reason: "tool_calls"`，後端執行工具、透過 SSE 推送 `toolCall`/`toolResult` 事件
+3. 將工具結果加回對話後再次呼叫 LLM（最多 5 輪）
+4. 最後用原本 streaming 串流最終回答
+
+前端在執行期間顯示「🔍 正在搜尋…」或「🐍 正在執行程式碼…」loading indicator；串流結束後，訊息下方顯示可折疊的「工具呼叫記錄」。
+
+---
+
+### T8-1 網路搜尋 — 即時資訊查詢
+
+**前置**：開啟「AI 工具呼叫」
+
+1. 新增對話，送出：
+   > `今天比特幣的價格是多少？`
+2. **預期**：
+   - 串流開始後先出現「🔍 正在搜尋…」
+   - AI 回覆包含實際數字（非 "我不知道"）
+   - 訊息下方出現「工具呼叫記錄」，點開後顯示 `web_search` input（query）與 output（搜尋結果）
+
+---
+
+### T8-2 網路搜尋 — 新聞事件
+
+1. 送出：
+   > `台灣今天有什麼重要新聞？`
+2. **預期**：觸發 `web_search`，AI 摘要當日新聞；工具記錄折疊後顯示搜尋 query 摘要
+
+---
+
+### T8-3 Python 執行 — 基本計算
+
+1. 送出：
+   > `請用 Python 計算費波那契數列前 15 項，並印出結果`
+2. **預期**：
+   - 出現「🐍 正在執行程式碼…」
+   - AI 回覆包含費波那契數列的正確數字
+   - 工具記錄展開後 stdout 顯示數列輸出
+
+---
+
+### T8-4 Python 執行 — 數學運算
+
+1. 送出：
+   > `幫我計算 2 的 100 次方，用 Python 執行並給我精確答案`
+2. **預期**：Python 執行 `print(2**100)`，stdout 顯示正確數值；AI 回覆引用該結果
+
+---
+
+### T8-5 Python 執行 — 語法錯誤
+
+1. 送出：
+   > `執行這段 Python：print("hello`（故意缺少右引號）
+2. **預期**：
+   - 工具記錄的 stderr 欄位顯示 `SyntaxError`
+   - AI 回覆說明錯誤原因，而非假裝成功
+
+---
+
+### T8-6 Python 執行超時
+
+1. 送出：
+   > `執行這段 Python 程式碼：while True: pass`
+2. **預期**：10 秒後工具回傳超時錯誤，AI 回覆說明執行超時，不永遠等待
+
+---
+
+### T8-7 多步驟 Agentic Loop（搜尋後計算）
+
+1. 送出：
+   > `搜尋今天台積電的股價，然後用 Python 計算如果我在 2024 年初用 50,000 元買入，以當前股價計算現在的市值`
+2. **預期**：
+   - 先觸發 `web_search`（搜尋股價）
+   - 再觸發 `python_execute`（執行計算）
+   - 工具記錄顯示兩次工具呼叫，各有對應的 input/output
+   - AI 最終給出完整分析
+
+---
+
+### T8-8 關閉 Tool Use 後不呼叫工具
+
+1. 關閉「AI 工具呼叫」開關
+2. 送出：
+   > `今天比特幣價格是多少？`
+3. **預期**：
+   - **不出現** loading indicator
+   - **不出現**工具呼叫記錄
+   - AI 直接回答（可能說不知道最新價格，但不會呼叫工具）
+
+---
+
+### T8-9 工具記錄折疊 / 展開
+
+1. 開啟 Tool Use，送出任何觸發搜尋的問題
+2. **預期**：
+   - 工具記錄預設**折疊**，顯示工具名稱、圖示、input 摘要（一行）
+   - 點擊後**展開**，顯示完整 JSON input 與 output
+   - 再點擊可重新折疊
+
+---
+
+### T8-10 Tool Use + Auto-routing 同時開啟
+
+1. 同時開啟「AI 自動選擇模型」和「AI 工具呼叫」
+2. 送出：
+   > `幫我查詢今天的黃金價格，並比較過去一個月的趨勢`
+3. **預期**：
+   - Auto-routing badge 顯示選擇的模型（應為 70b）
+   - 工具呼叫正常執行，記錄正常顯示
+
+---
+
 ## 除錯提示
 
 | 問題 | 查看位置 |
@@ -245,3 +367,8 @@ cd frontend && npm run dev
 | 串流中斷 | browser DevTools Network → `/api/chat/stream` |
 | Auto-routing 沒有切換模型 | DevTools Network → `POST /api/route`，查看 response `{ modelId, reason }` |
 | Auto-routing badge 沒有出現 | 確認訊息物件上有 `model` 欄位：DevTools → Application → localStorage → `ccgpt_conversations` |
+| Tool use 沒有觸發工具 | backend console 查看是否有 `[chat/stream]` 錯誤；確認模型支援 function calling（70b / 1-70b） |
+| 搜尋工具回傳 key 未設定 | 確認 `backend/.env` 有 `TAVILY_API_KEY`；重啟 backend |
+| Python 工具回傳 not found | 確認環境有 `python3`：`which python3` |
+| 工具記錄沒有出現在訊息 | DevTools → Application → localStorage → `ccgpt_conversations`，確認訊息物件有 `toolCalls` 欄位 |
+| SSE toolCall/toolResult 事件 | DevTools Network → `/api/chat/stream` → Response，觀察 `data: {"toolCall":...}` 行 |

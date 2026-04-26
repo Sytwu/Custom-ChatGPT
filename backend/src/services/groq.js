@@ -28,3 +28,17 @@ export async function completeChat(messages, model, temperature, maxTokens, apiK
   const result = await client.chat.completions.create(params);
   return result.choices?.[0]?.message?.content ?? "";
 }
+
+export async function completeChatWithTools(messages, model, tools, apiKey) {
+  const client = apiKey ? new Groq({ apiKey }) : defaultClient;
+  if (!client) {
+    throw new Error("No Groq API key available. Please add your Groq API key in Settings.");
+  }
+  return await client.chat.completions.create({
+    model,
+    messages,
+    tools,
+    tool_choice: "auto",
+    stream: false,
+  });
+}

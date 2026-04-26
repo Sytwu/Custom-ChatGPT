@@ -1,10 +1,20 @@
 import { Router } from "express";
-import { streamChat } from "../services/llm.js";
+import { streamChat, completeChatWithTools } from "../services/llm.js";
+import { TOOLS_DEFINITION, executeTool } from "../services/tools/index.js";
 
 const router = Router();
+const MAX_TOOL_ROUNDS = 5;
 
 router.post("/stream", async (req, res, next) => {
-  const { model, systemPrompt, messages, temperature = 0.7, maxTokens = 1024, apiKey } = req.body;
+  const {
+    model,
+    systemPrompt,
+    messages,
+    temperature = 0.7,
+    maxTokens = 1024,
+    apiKey,
+    toolsEnabled = false,
+  } = req.body;
 
   if (!model) {
     return res.status(400).json({ error: "model is required" });
@@ -74,7 +84,61 @@ router.post("/stream", async (req, res, next) => {
   });
 
   try {
-    const stream = await streamChat(finalMessages, model, temperature, maxTokens, apiKey);
+    let streamMessages = finalMessages;
+
+    // Agentic tool-call loop (only when toolsEnabled and model supports tools)
+    if (toolsEnabled) {
+      let rounds = 0;
+      while (rounds < MAX_TOOL_ROUNDS && !done) {
+        let completion;
+        try {
+          completion = await completeChatWithTools(streamMessages, model, TOOLS_DEFINITION, apiKey);
+        } catch (toolErr) {
+          // Groq rejects malformed tool calls (tool_use_failed) — fall back to streaming without tools
+          console.warn("[chat/stream] tool call rejected, falling back to streaming:", toolErr.message);
+          break;
+        }
+        const choice = completion.choices?.[0];
+
+        if (choice?.finish_reason !== "tool_calls") break;
+
+        const toolCalls = choice.message.tool_calls ?? [];
+        if (toolCalls.length === 0) break;
+
+        // Add the assistant's tool-call message to the conversation
+        streamMessages = [...streamMessages, choice.message];
+
+        for (const tc of toolCalls) {
+          if (done) break;
+          const name = tc.function?.name ?? "unknown";
+          let input = {};
+          try { input = JSON.parse(tc.function?.arguments ?? "{}"); } catch { /* use empty input */ }
+
+          res.write(`data: ${JSON.stringify({ toolCall: { name, input } })}\n\n`);
+
+          const output = await executeTool(name, input);
+
+          res.write(`data: ${JSON.stringify({ toolResult: { name, output } })}\n\n`);
+
+          streamMessages = [
+            ...streamMessages,
+            { role: "tool", tool_call_id: tc.id, content: output },
+          ];
+        }
+
+        rounds++;
+      }
+
+      if (rounds >= MAX_TOOL_ROUNDS && !done) {
+        res.write(`data: ${JSON.stringify({ delta: "\n\n[工具呼叫已達上限，強制停止]" })}\n\n`);
+        res.write("data: [DONE]\n\n");
+        res.end();
+        return;
+      }
+    }
+
+    // Final streaming response
+    const stream = await streamChat(streamMessages, model, temperature, maxTokens, apiKey);
 
     for await (const chunk of stream) {
       if (done) break;
