@@ -10,7 +10,7 @@ const TOP_K = 5;
  *
  * @param {string} query
  * @param {Array} siblingConversations  — array of conversation objects (each has .messages)
- * @param {string|null} apiKey          — NVIDIA API key (or null to use server env)
+ * @param {string|null} apiKey          — API key (or null to use server env)
  * @returns {Promise<string>}           — formatted context block to prepend to systemPrompt,
  *                                        or empty string if RAG is skipped/failed
  */

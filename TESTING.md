@@ -164,6 +164,77 @@ cd frontend && npm run dev
 
 ---
 
+## 功能七：AI 自動選擇模型（Auto-routing）
+
+> **前置條件**：右側設定欄 → 開啟「AI 自動選擇模型」開關。
+
+### 背景原理
+
+每次送出訊息前，前端會先呼叫 `POST /api/route`，用 `llama-3.1-8b-instant` 分析你的訊息並選出最適合的模型，再用選出的模型呼叫 `POST /api/chat/stream`。模型選擇結果以小 badge 顯示在每條 AI 回覆旁邊。
+
+### T7-1 簡單問題 → 路由至輕量模型
+
+1. 開啟「AI 自動選擇模型」
+2. 新增對話，送出：
+   > `你好`
+3. **預期**：AI 回覆旁的 badge 顯示 `llama-3.1-8b-instant`
+
+---
+
+1. 送出：
+   > `今天天氣怎麼樣?`
+2. **預期**：badge 顯示 `llama-3.1-8b-instant`
+
+### T7-2 複雜任務 → 路由至高階模型
+
+1. 新增對話，送出：
+   > `請幫我分析以下商業計畫的優缺點，並提供詳細的改善建議：「我想開一家結合 AI 技術的連鎖餐廳，利用 AI 進行點餐、庫存管理與個人化推薦」`
+2. **預期**：badge 顯示 `llama-3.3-70b-versatile`
+
+---
+
+1. 送出：
+   > `請比較 React、Vue、Svelte 三種前端框架的優缺點，並說明各自適合的使用場景`
+2. **預期**：badge 顯示 `llama-3.3-70b-versatile`
+
+---
+
+1. 送出：
+   > `請用 Python 實作一個 LRU Cache，包含詳細的時間複雜度分析與使用範例`
+2. **預期**：badge 顯示 `llama-3.3-70b-versatile`
+
+---
+
+1. 送出：
+   > `幫我撰寫一份 500 字的產品發表會致詞稿，產品是一個 AI 輔助的醫療診斷系統`
+2. **預期**：badge 顯示 `llama-3.3-70b-versatile`
+
+### T7-3 關閉 auto-routing 時 badge 不顯示
+
+1. 關閉「AI 自動選擇模型」
+2. 送出任意訊息
+3. **預期**：AI 回覆旁**不顯示** badge，使用設定欄中手動選擇的模型
+
+### T7-4 多輪對話各自顯示正確 badge
+
+1. 開啟「AI 自動選擇模型」
+2. 送出 `你好` → 送出 `請詳細解釋量子糾纏的原理與實際應用`
+3. **預期**：第一條回覆旁顯示 `llama-3.1-8b-instant`，第二條顯示 `llama-3.3-70b-versatile`
+
+### T7-5 無 API Key（使用後端環境變數）
+
+1. 前端設定欄的 Groq API Key 欄位**留空**（後端 `.env` 已設定 `GROQ_API_KEY`）
+2. 開啟「AI 自動選擇模型」，送出：
+   > `請幫我評估 PostgreSQL 和 MongoDB 的適用情境`
+3. **預期**：routing 正常運作，badge 顯示 `llama-3.3-70b-versatile`，不因前端無 key 而失敗
+
+### T7-6 Badge 歷史保留
+
+1. 送出幾條訊息（含簡單與複雜），完成後向上捲動
+2. **預期**：每條舊的 AI 回覆旁 badge 仍正確顯示當時使用的模型（存在訊息物件上，不因後續訊息改變）
+
+---
+
 ## 除錯提示
 
 | 問題 | 查看位置 |
@@ -172,3 +243,5 @@ cd frontend && npm run dev
 | 壓縮失敗 | backend console `[compress] summary length:` |
 | Firebase 連線錯誤 | backend console `[memory/list]` 或 `[memory/add]` |
 | 串流中斷 | browser DevTools Network → `/api/chat/stream` |
+| Auto-routing 沒有切換模型 | DevTools Network → `POST /api/route`，查看 response `{ modelId, reason }` |
+| Auto-routing badge 沒有出現 | 確認訊息物件上有 `model` 欄位：DevTools → Application → localStorage → `ccgpt_conversations` |

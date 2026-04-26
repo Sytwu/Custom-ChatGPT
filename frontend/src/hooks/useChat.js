@@ -6,15 +6,6 @@ import { fetchRagContext } from "./useRag.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useMemory, buildMemoryPrompt } from "./useMemory.js";
 
-const NVIDIA_PREFIXES = [
-  "nvidia/", "meta/", "mistralai/", "google/", "microsoft/",
-  "deepseek-ai/", "qwen/", "moonshotai/",
-];
-
-function isNvidiaModel(modelId) {
-  return NVIDIA_PREFIXES.some((prefix) => modelId.startsWith(prefix));
-}
-
 function applyMemoryCutoff(messages, memoryEnabled, memoryCutoff) {
   if (!memoryEnabled) {
     return [messages[messages.length - 1]];
@@ -89,7 +80,7 @@ export function useChat() {
       content: apiContent(msg),
     }));
 
-    const apiKey = isNvidiaModel(state.model) ? state.nvidiaApiKey : state.groqApiKey;
+    const apiKey = state.groqApiKey;
 
     // Long-term memory: fetch and prepend to system prompt if logged in
     let memoryPrefix = "";
@@ -107,16 +98,30 @@ export function useChat() {
         const siblings = state.conversations.filter(
           (c) => c.groupId === group.id && c.id !== state.activeConversationId
         );
-        // RAG always uses NVIDIA embeddings key (falls back to server env if not set)
-        const ragApiKey = state.nvidiaApiKey || null;
-        if (!ragApiKey) {
-          console.warn("[RAG] NVIDIA API key not set — skipping RAG (set it in Settings)");
-        }
-        ragPrefix = await fetchRagContext(trimmedText, siblings, ragApiKey);
+        ragPrefix = await fetchRagContext(trimmedText, siblings, state.groqApiKey || null);
       }
     }
 
-    dispatch({ type: ACTIONS.START_STREAM });
+    // Auto-routing: ask backend to pick the best model for this message
+    let routedModel = null;
+    if (state.autoRouting) {
+      try {
+        const routeBody = { message: trimmedText };
+        if (apiKey) routeBody.apiKey = apiKey;
+        const routeRes = await fetch(`${API_BASE}/api/route`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(routeBody),
+        });
+        if (routeRes.ok) {
+          const { modelId } = await routeRes.json();
+          if (modelId) routedModel = modelId;
+        }
+      } catch {
+        // Routing failed — fall back to state.model silently
+      }
+    }
+    dispatch({ type: ACTIONS.START_STREAM, payload: routedModel ?? state.model });
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -126,7 +131,7 @@ export function useChat() {
         ? "You are in Discord chat mode. Keep your responses brief and conversational — ideally 1 to 3 sentences. Avoid lengthy explanations unless directly asked.\n\n"
         : "";
       const body = {
-        model: state.model,
+        model: routedModel ?? state.model,
         systemPrompt: memoryPrefix + discordPrefix + extraSystemPrompt + ragPrefix + state.systemPrompt,
         messages: apiMessages,
         temperature: state.temperature,
@@ -268,14 +273,12 @@ export function useChat() {
         const siblings = state.conversations.filter(
           (c) => c.groupId === group.id && c.id !== state.activeConversationId
         );
-        const ragApiKey = state.nvidiaApiKey || null;
-        if (!ragApiKey) console.warn("[RAG] NVIDIA API key not set — skipping RAG");
-        ragPrefix = await fetchRagContext(filtered[filtered.length - 1], siblings, ragApiKey);
+        ragPrefix = await fetchRagContext(filtered[filtered.length - 1], siblings, state.groqApiKey || null);
       }
     }
 
     // 5. Stream
-    dispatch({ type: ACTIONS.START_STREAM });
+    dispatch({ type: ACTIONS.START_STREAM, payload: state.model });
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
@@ -283,7 +286,7 @@ export function useChat() {
       const discordPrefix = activeConv?.discordMode
         ? "You are in Discord chat mode. Keep your responses brief and conversational — ideally 1 to 3 sentences. Avoid lengthy explanations unless directly asked.\n\n"
         : "";
-      const apiKey = isNvidiaModel(state.model) ? state.nvidiaApiKey : state.groqApiKey;
+      const apiKey = state.groqApiKey;
       const body = {
         model: state.model,
         systemPrompt: memoryPrefixBatch + discordPrefix + ragPrefix + state.systemPrompt,

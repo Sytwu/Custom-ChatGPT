@@ -32,7 +32,7 @@ export function saveSettings(settings) {
 }
 
 export function loadApiKeys() {
-  return load(KEYS.apiKeys, { groqApiKey: "", nvidiaApiKey: "" });
+  return load(KEYS.apiKeys, { groqApiKey: "" });
 }
 
 export function saveApiKeys(keys) {

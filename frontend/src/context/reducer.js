@@ -32,7 +32,6 @@ function makeGroup(name, color = null) {
 export const initialState = {
   // API Keys
   groqApiKey: "",
-  nvidiaApiKey: "",
 
   // Settings
   model: DEFAULT_MODEL,
@@ -41,6 +40,7 @@ export const initialState = {
   maxTokens: 1024,
   memoryEnabled: true,
   memoryCutoff: 10,
+  autoRouting: false,
   theme: "dark",
   language: "zh-TW",
 
@@ -52,6 +52,7 @@ export const initialState = {
   // Streaming
   isStreaming: false,
   streamingContent: "",
+  streamingModel: null,
 
   // UI
   error: null,
@@ -122,12 +123,12 @@ export function reducer(state, action) {
     case ACTIONS.SET_CUTOFF:
       return { ...state, memoryCutoff: action.payload };
 
+    case ACTIONS.SET_AUTO_ROUTING:
+      return { ...state, autoRouting: action.payload };
+
     // ── API Keys ─────────────────────────────────────────────────────
     case ACTIONS.SET_GROQ_KEY:
       return { ...state, groqApiKey: action.payload };
-
-    case ACTIONS.SET_NVIDIA_KEY:
-      return { ...state, nvidiaApiKey: action.payload };
 
     // ── Conversations ────────────────────────────────────────────────
     case ACTIONS.NEW_CONVERSATION: {
@@ -231,7 +232,7 @@ export function reducer(state, action) {
       ]);
 
     case ACTIONS.START_STREAM:
-      return { ...state, isStreaming: true, streamingContent: "", error: null };
+      return { ...state, isStreaming: true, streamingContent: "", streamingModel: action.payload ?? null, error: null };
 
     case ACTIONS.APPEND_TOKEN:
       return { ...state, streamingContent: state.streamingContent + action.payload };
@@ -244,11 +245,12 @@ export function reducer(state, action) {
         id: makeId(),
         role: "assistant",
         content: part,
+        model: state.streamingModel ?? null,
         replyTo: null,
         reactions: {},
         stickerUrl: null,
         stickerDescription: null,
-        timestamp: now + i, // ensure unique timestamps for grouped logic
+        timestamp: now + i,
       }));
 
       return {
@@ -273,13 +275,13 @@ export function reducer(state, action) {
       return {
         ...state,
         groqApiKey: p.groqApiKey ?? "",
-        nvidiaApiKey: p.nvidiaApiKey ?? "",
         model: p.model ?? state.model,
         systemPrompt: p.systemPrompt ?? state.systemPrompt,
         temperature: p.temperature ?? state.temperature,
         maxTokens: p.maxTokens ?? state.maxTokens,
         memoryEnabled: p.memoryEnabled ?? state.memoryEnabled,
         memoryCutoff: p.memoryCutoff ?? state.memoryCutoff,
+        autoRouting: p.autoRouting ?? state.autoRouting,
         theme: p.theme ?? state.theme,
         language: p.language ?? state.language,
         conversations,

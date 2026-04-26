@@ -34,7 +34,6 @@ export const translations = {
 
     // API Keys
     groqApiKey: "Groq API Key",
-    nvidiaApiKey: "NVIDIA API Key",
     apiKeyPlaceholder: "輸入您的 API 金鑰",
     showKey: "顯示金鑰",
     hideKey: "隱藏金鑰",
@@ -60,6 +59,11 @@ export const translations = {
     turns: "輪對話",
     memoryHint: (n) => `1 輪 = 1 問答。每次請求最多傳送 ${n * 2} 則訊息。`,
     memoryOffHint: "記憶已關閉 — 僅傳送當前訊息。",
+
+    // Auto-routing
+    autoRouting: "AI 自動選擇模型",
+    autoRoutingHint: "每次傳送訊息前，AI 會自動根據任務選擇最適合的模型。",
+    routedModelLabel: "AI 選擇：",
 
     // Input bar
     inputPlaceholder: "輸入訊息… (Enter 傳送，Shift+Enter 換行)",
@@ -163,7 +167,6 @@ export const translations = {
 
     // API Keys
     groqApiKey: "Groq API Key",
-    nvidiaApiKey: "NVIDIA API Key",
     apiKeyPlaceholder: "Enter your API key here",
     showKey: "Show key",
     hideKey: "Hide key",
@@ -189,6 +192,11 @@ export const translations = {
     turns: "turns",
     memoryHint: (n) => `1 turn = 1 Q&A pair. Max ${n * 2} messages sent per request.`,
     memoryOffHint: "Memory off — only the current message is sent.",
+
+    // Auto-routing
+    autoRouting: "Auto Model Selection",
+    autoRoutingHint: "AI automatically picks the best model for each message before sending.",
+    routedModelLabel: "AI selected: ",
 
     // Input bar
     inputPlaceholder: "Type a message… (Enter to send, Shift+Enter for newline)",

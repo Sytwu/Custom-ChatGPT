@@ -350,6 +350,17 @@ hr { border: none; border-top: 1px solid var(--border); }
   flex-shrink: 0;
 }
 
+.message-model-badge {
+  font-size: 10px;
+  color: var(--text-muted, #888);
+  padding: 1px 5px;
+  background: var(--border);
+  border-radius: 3px;
+  margin-left: 6px;
+  font-weight: normal;
+  vertical-align: middle;
+}
+
 .input-row {
   display: flex;
   align-items: stretch;

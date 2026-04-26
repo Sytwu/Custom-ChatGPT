@@ -1,23 +1,13 @@
+// Static fallback list used when /api/models is unavailable
 export const MODELS = [
   {
     group: "Groq",
     models: [
       { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
+      { id: "llama-3.1-70b-versatile", label: "Llama 3.1 70B" },
       { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B (Fast)" },
       { id: "meta-llama/llama-4-scout-17b-16e-instruct", label: "Llama 4 Scout 17B (Vision)", vision: true },
-    ],
-  },
-  {
-    group: "NVIDIA NIM",
-    models: [
-      { id: "meta/llama-3.3-70b-instruct", label: "Llama 3.3 70B" },
-      { id: "nvidia/llama-3.3-nemotron-super-49b-v1", label: "Nemotron Super 49B" },
-      { id: "nvidia/llama-3.1-nemotron-nano-8b-v1", label: "Nemotron Nano 8B" },
-      { id: "meta/llama-4-maverick-17b-128e-instruct", label: "Llama 4 Maverick 17B (Vision)", vision: true },
-      { id: "mistralai/mistral-small-24b-instruct", label: "Mistral Small 24B" },
-      { id: "deepseek-ai/deepseek-v3.1", label: "DeepSeek V3.1" },
-      { id: "google/gemma-2-9b-it", label: "Gemma 2 9B" },
-      { id: "moonshotai/kimi-k2-instruct", label: "Kimi K2" },
+      { id: "meta-llama/llama-4-maverick-17b-128e-instruct", label: "Llama 4 Maverick 17B (Vision)", vision: true },
     ],
   },
 ];

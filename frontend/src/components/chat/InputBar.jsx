@@ -13,7 +13,6 @@ import { useT } from "../../i18n/useT.js";
 const ACCEPTED_TYPES = ".pdf,.txt,.md,.py,.js,.ts,.jsx,.tsx,.json,.csv,.yaml,.yml,.html,.css,.jpg,.jpeg,.png,.gif,.webp";
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
-const NVIDIA_PREFIXES = ["nvidia/", "meta/", "mistralai/", "google/", "microsoft/", "deepseek-ai/", "qwen/", "moonshotai/"];
 
 function readImageAsDataURL(file) {
   return new Promise((resolve, reject) => {
@@ -147,8 +146,7 @@ export function InputBar({ replyTo, onCancelReply, msgQueue = [], onAddToQueue, 
     setShowSuggestions(true);
     setSuggestions(null);
     try {
-      const isNvidia = NVIDIA_PREFIXES.some((p) => state.model.startsWith(p));
-      const apiKey = isNvidia ? state.nvidiaApiKey : state.groqApiKey;
+      const apiKey = state.groqApiKey;
 
       const body = { text: text.trim(), model: state.model };
       if (apiKey) body.apiKey = apiKey;

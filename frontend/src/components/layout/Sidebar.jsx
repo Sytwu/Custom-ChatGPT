@@ -4,6 +4,7 @@ import { SystemPromptInput } from "../settings/SystemPromptInput.jsx";
 import { TemperatureSlider } from "../settings/TemperatureSlider.jsx";
 import { MaxTokensInput } from "../settings/MaxTokensInput.jsx";
 import { MemoryControls } from "../settings/MemoryControls.jsx";
+import { RoutingSettings } from "../settings/RoutingSettings.jsx";
 import { useAppContext } from "../../hooks/useAppContext.js";
 import { ACTIONS } from "../../context/actions.js";
 
@@ -34,6 +35,8 @@ export function Sidebar() {
           <MaxTokensInput />
           <hr />
           <MemoryControls />
+          <hr />
+          <RoutingSettings />
           <hr />
           <button
             className="clear-btn"

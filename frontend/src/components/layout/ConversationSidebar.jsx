@@ -77,7 +77,7 @@ function ConversationItem({ conv, isActive, onSwitch, isStreaming }) {
       const res = await fetch(`${API_BASE}/api/compress`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages, model: state.model, apiKey: state.groqApiKey || state.nvidiaApiKey }),
+        body: JSON.stringify({ messages, model: state.model, apiKey: state.groqApiKey }),
       });
       if (!res.ok) throw new Error("failed");
       const { summary } = await res.json();

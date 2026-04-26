@@ -68,7 +68,7 @@ export function DiscordMessageBubble({ message, grouped, onReply, allMessages, p
     setExtracting(true);
     try {
       const messages = getActiveMessages(state).map((m) => ({ role: m.role, content: apiContent(m) }));
-      const result = await extractMemories(messages, state.model, state.groqApiKey || state.nvidiaApiKey);
+      const result = await extractMemories(messages, state.model, state.groqApiKey);
       const count = result?.extracted?.length ?? 0;
       setToast(count > 0 ? t("memoryExtracted", count) : t("noNewMemory"));
     } catch {
@@ -115,6 +115,9 @@ export function DiscordMessageBubble({ message, grouped, onReply, allMessages, p
         {!grouped && (
           <div className="discord-meta">
             <span className="discord-username">{username}</span>
+            {!isUser && message.model && (
+              <span className="message-model-badge">{message.model}</span>
+            )}
             <span className="discord-timestamp">{formatDiscordTime(message.timestamp, t)}</span>
           </div>
         )}

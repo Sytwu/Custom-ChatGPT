@@ -20,7 +20,7 @@ export function MessageBubble({ message }) {
     setExtracting(true);
     try {
       const messages = getActiveMessages(state).map((m) => ({ role: m.role, content: apiContent(m) }));
-      const result = await extractMemories(messages, state.model, state.groqApiKey || state.nvidiaApiKey);
+      const result = await extractMemories(messages, state.model, state.groqApiKey);
       const count = result?.extracted?.length ?? 0;
       setToast(count > 0 ? t("memoryExtracted", count) : t("noNewMemory"));
     } catch {
@@ -33,7 +33,12 @@ export function MessageBubble({ message }) {
 
   return (
     <div className={`message-bubble ${isUser ? "user" : "assistant"}`}>
-      <div className="message-role">{isUser ? "You" : "Assistant"}</div>
+      <div className="message-role">
+        {isUser ? "You" : "Assistant"}
+        {!isUser && message.model && (
+          <span className="message-model-badge">{message.model}</span>
+        )}
+      </div>
       <div className="message-content">
         {isUser ? (
           <>

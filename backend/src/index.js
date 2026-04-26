@@ -8,6 +8,8 @@ import suggestRouter from "./routes/suggest.js";
 import authRouter from "./routes/auth.js";
 import memoryRouter from "./routes/memory.js";
 import compressRouter from "./routes/compress.js";
+import modelsRouter from "./routes/models.js";
+import routeRouter from "./routes/route.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
@@ -32,6 +34,8 @@ app.use("/api/suggest", suggestRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/memory", memoryRouter);
 app.use("/api/compress", compressRouter);
+app.use("/api/models", modelsRouter);
+app.use("/api/route", routeRouter);
 
 // Global error handler
 app.use(errorHandler);

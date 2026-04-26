@@ -41,11 +41,6 @@ export function ApiKeyInputs() {
         value={state.groqApiKey}
         onChange={(val) => dispatch({ type: ACTIONS.SET_GROQ_KEY, payload: val })}
       />
-      <ApiKeyField
-        label={t("nvidiaApiKey")}
-        value={state.nvidiaApiKey}
-        onChange={(val) => dispatch({ type: ACTIONS.SET_NVIDIA_KEY, payload: val })}
-      />
     </div>
   );
 }

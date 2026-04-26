@@ -22,13 +22,13 @@ export function AppProvider({ children }) {
   // Hydrate from localStorage on mount
   useEffect(() => {
     const settings = loadSettings() ?? {};
-    const { groqApiKey, nvidiaApiKey } = loadApiKeys();
+    const { groqApiKey } = loadApiKeys();
     const conversations = loadConversations();
     const activeConversationId = loadActiveId();
     const groups = loadGroups();
     dispatch({
       type: ACTIONS.LOAD_STATE,
-      payload: { ...settings, groqApiKey, nvidiaApiKey, conversations, activeConversationId, groups },
+      payload: { ...settings, groqApiKey, conversations, activeConversationId, groups },
     });
   }, []);
 
@@ -46,15 +46,16 @@ export function AppProvider({ children }) {
       maxTokens: state.maxTokens,
       memoryEnabled: state.memoryEnabled,
       memoryCutoff: state.memoryCutoff,
+      autoRouting: state.autoRouting,
       theme: state.theme,
       language: state.language,
     });
-  }, [state.model, state.systemPrompt, state.temperature, state.maxTokens, state.memoryEnabled, state.memoryCutoff, state.theme, state.language]);
+  }, [state.model, state.systemPrompt, state.temperature, state.maxTokens, state.memoryEnabled, state.memoryCutoff, state.autoRouting, state.theme, state.language]);
 
   // Persist API keys changes
   useEffect(() => {
-    saveApiKeys({ groqApiKey: state.groqApiKey, nvidiaApiKey: state.nvidiaApiKey });
-  }, [state.groqApiKey, state.nvidiaApiKey]);
+    saveApiKeys({ groqApiKey: state.groqApiKey });
+  }, [state.groqApiKey]);
 
   // Persist conversations (only when not mid-stream to avoid excessive writes)
   useEffect(() => {
