@@ -1554,6 +1554,7 @@ hr { border: none; border-top: 1px solid var(--border); }
 }
 .sticker-btn:disabled { opacity: 0.4; cursor: default; }
 
+
 /* Sticker picker anchor wrapper */
 .sticker-picker-anchor {
   position: relative;

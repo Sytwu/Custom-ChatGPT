@@ -94,7 +94,7 @@ export function InputBar({ replyTo, onCancelReply, msgQueue = [], onAddToQueue, 
   function handleSend() {
     if (state.isStreaming) return;
     if (!text.trim() && !attachment && msgQueue.length === 0) return;
-    if (hasImage && !currentModelSupportsVision) {
+    if (hasImage && !currentModelSupportsVision && !state.autoRouting) {
       dispatch({ type: ACTIONS.STREAM_ERROR, payload: t("imageNotSupported") });
       return;
     }
@@ -211,7 +211,7 @@ export function InputBar({ replyTo, onCancelReply, msgQueue = [], onAddToQueue, 
           <button onClick={() => dispatch({ type: ACTIONS.CLEAR_ERROR })}>×</button>
         </div>
       )}
-      {hasImage && !currentModelSupportsVision && (
+      {hasImage && !currentModelSupportsVision && !state.autoRouting && (
         <div className="vision-warning">
           ⚠️ {t("visionModelRequired")}
         </div>

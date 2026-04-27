@@ -129,15 +129,20 @@ cd frontend && npm run dev
 2. 送出 `幫我解釋這份程式碼`
 3. **預期**：AI 能正確描述檔案內容
 
-### T5-2 上傳圖片（Vision 模型）
-1. 切換至支援 Vision 的模型（如 `meta-llama/llama-4-scout-17b-16e-instruct`）
+### T5-2 上傳圖片（手動選擇 Vision 模型）
+1. **關閉**「AI 自動選擇模型」，手動切換至 `meta-llama/llama-4-scout-17b-16e-instruct`
 2. 點 📎 上傳一張圖片，送出 `這張圖片有什麼?`
 3. **預期**：AI 正確描述圖片內容
 
-### T5-3 非 Vision 模型上傳圖片
-1. 切換至非 Vision 模型
+### T5-3 非 Vision 模型上傳圖片（無 Auto-routing）
+1. **關閉**「AI 自動選擇模型」，手動切換至非 Vision 模型（如 `llama-3.3-70b-versatile`）
 2. 嘗試上傳圖片
-3. **預期**：顯示警告，無法送出
+3. **預期**：顯示 `⚠️` 警告訊息，傳送按鈕無法送出
+
+### T5-4 上傳圖片（Auto-routing 自動切換 Vision 模型）
+1. **開啟**「AI 自動選擇模型」，設定欄保持非 Vision 模型
+2. 點 📎 上傳一張圖片，送出 `描述一下這張圖片的內容`
+3. **預期**：AI 正確描述圖片（自動切換至 Vision 模型），**不顯示** `⚠️` 警告
 
 ---
 
@@ -232,6 +237,37 @@ cd frontend && npm run dev
 
 1. 送出幾條訊息（含簡單與複雜），完成後向上捲動
 2. **預期**：每條舊的 AI 回覆旁 badge 仍正確顯示當時使用的模型（存在訊息物件上，不因後續訊息改變）
+
+### T7-7 圖片附件 → 自動切換 Vision 模型（Rule-based）
+
+> **前置條件**：開啟「AI 自動選擇模型」；設定欄中的模型可為任意**非 Vision** 模型（如 `llama-3.3-70b-versatile`）
+
+1. 點 📎 上傳任一圖片
+2. 輸入 `這張圖片有什麼?` 並送出
+3. **預期**：
+   - AI 回覆旁 badge 顯示 `llama-4-scout-17b-16e-instruct`（而非設定欄中的模型）
+   - AI 能正確描述圖片內容（Vision 模型成功處理圖片）
+   - 設定欄中選擇的模型**不會被改變**（routing 僅影響本次請求）
+
+### T7-8 無圖片時 Vision 模型不介入
+
+1. 開啟「AI 自動選擇模型」，**不附圖片**，送出：
+   > `請分析量子運算的發展趨勢`
+2. **預期**：badge 顯示 `llama-3.3-70b-versatile`，**不會**出現 vision 模型（規則只在有圖片時觸發）
+
+### T7-9 關閉 Auto-routing 時圖片不自動切換模型
+
+1. **關閉**「AI 自動選擇模型」，手動選擇一個 Vision 模型（如 `llama-4-scout-17b-16e-instruct`）
+2. 上傳圖片，送出 `描述這張圖片`
+3. **預期**：使用手動選擇的模型，正常回應（不觸發 rule-based 路由）
+
+### T7-10 Discord 批次送出 + 圖片 → Vision 模型
+
+1. 開啟「AI 自動選擇模型」，新增 Discord 模式對話
+2. 輸入 `這張圖片畫了什麼?`，按 Enter 加入佇列
+3. 點 📎 附加一張圖片
+4. 點「全部送出」
+5. **預期**：badge 顯示 `llama-4-scout-17b-16e-instruct`，AI 能描述圖片內容
 
 ---
 
@@ -367,6 +403,7 @@ cd frontend && npm run dev
 | 串流中斷 | browser DevTools Network → `/api/chat/stream` |
 | Auto-routing 沒有切換模型 | DevTools Network → `POST /api/route`，查看 response `{ modelId, reason }` |
 | Auto-routing badge 沒有出現 | 確認訊息物件上有 `model` 欄位：DevTools → Application → localStorage → `ccgpt_conversations` |
+| 圖片附件未自動切換 Vision 模型 | 確認「AI 自動選擇模型」已開啟；DevTools Network 確認沒有多餘的 `/api/route` 呼叫（有圖片時應 bypass 後端 route）|
 | Tool use 沒有觸發工具 | backend console 查看是否有 `[chat/stream]` 錯誤；確認模型支援 function calling（70b / 1-70b） |
 | 搜尋工具回傳 key 未設定 | 確認 `backend/.env` 有 `TAVILY_API_KEY`；重啟 backend |
 | Python 工具回傳 not found | 確認環境有 `python3`：`which python3` |

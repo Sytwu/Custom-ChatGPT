@@ -37,20 +37,22 @@ gh repo create custom-chatgpt --public --push
    - **Docker context**: `./backend`
 5. Under **Environment Variables**, add all of the following:
 
-   | Key | Value |
-   |-----|-------|
-   | `PORT` | `3001` |
-   | `ALLOWED_ORIGINS` | *(fill in after Vercel deploy — see Step 4)* |
-   | `GROQ_API_KEY` | *(optional — users can also enter keys in the UI)* |
-   | `NVIDIA_API_KEY` | *(optional — users can also enter keys in the UI)* |
-   | `GOOGLE_CLIENT_ID` | *(from Google Cloud Console — see Step 2a)* |
-   | `GOOGLE_CLIENT_SECRET` | *(from Google Cloud Console — see Step 2a)* |
-   | `JWT_SECRET` | *(random string — run `openssl rand -base64 32`)* |
-   | `FRONTEND_URL` | *(your Vercel URL — fill in after Step 3)* |
-   | `BACKEND_URL` | *(your Render service URL, e.g. `https://custom-chatgpt-backend.onrender.com`)* |
-   | `FIREBASE_PROJECT_ID` | *(from Firebase Console — see Step 2b)* |
-   | `FIREBASE_CLIENT_EMAIL` | *(from Firebase service account JSON — see Step 2b)* |
-   | `FIREBASE_PRIVATE_KEY` | *(from Firebase service account JSON — paste with literal `\n`, see Step 2b)* |
+   | Key | Required | Value |
+   |-----|----------|-------|
+   | `PORT` | ✅ | `3001` |
+   | `ALLOWED_ORIGINS` | ✅ | *(fill in after Vercel deploy — see Step 4)* |
+   | `GROQ_API_KEY` | optional | *(users can also enter in UI; recommended to set for smoother onboarding)* |
+   | `TAVILY_API_KEY` | optional | *(required for AI Tool Use → web search; free 1,000 req/mo at [tavily.com](https://tavily.com))* |
+   | `GOOGLE_CLIENT_ID` | ✅ | *(from Google Cloud Console — see Step 2a)* |
+   | `GOOGLE_CLIENT_SECRET` | ✅ | *(from Google Cloud Console — see Step 2a)* |
+   | `JWT_SECRET` | ✅ | *(random string — run `openssl rand -base64 32`)* |
+   | `FRONTEND_URL` | ✅ | *(your Vercel URL — fill in after Step 3)* |
+   | `BACKEND_URL` | ✅ | *(your Render service URL, e.g. `https://custom-chatgpt-backend.onrender.com`)* |
+   | `FIREBASE_PROJECT_ID` | ✅ | *(from Firebase Console — see Step 2b)* |
+   | `FIREBASE_CLIENT_EMAIL` | ✅ | *(from Firebase service account JSON — see Step 2b)* |
+   | `FIREBASE_PRIVATE_KEY` | ✅ | *(from Firebase service account JSON — paste with literal `\n`, see Step 2b)* |
+
+   > **Note on NVIDIA API key:** The RAG (group semantic search) feature requires an NVIDIA NIM API key. There is no server-side env var for it — users must enter it in the UI Settings panel.
 
 6. Click **Deploy**. Wait for the build to succeed.
 7. Copy the **public URL** (e.g. `https://custom-chatgpt-backend.onrender.com`). You'll need it for Steps 2a and 3.
@@ -148,6 +150,9 @@ Render will redeploy automatically after saving.
 | `OAuth redirect_uri_mismatch` from Google | `BACKEND_URL` env var doesn't match Google Cloud Console URI | Make sure the Authorized redirect URI in Google Console matches `${BACKEND_URL}/api/auth/google/callback` exactly |
 | Memory won't save / Firebase error | Firebase credentials missing or wrong | Check `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` in Render |
 | Render service crashes on startup | Missing or malformed env var | Check Render → Logs tab for the error message |
+| AI Tool Use → web search 回傳「key not configured」 | `TAVILY_API_KEY` not set in Render | Add `TAVILY_API_KEY` in Render env vars; restart service |
+| AI Tool Use 開啟但工具不觸發 | 使用的模型不支援 function calling | 切換至 `llama-3.3-70b-versatile`（Groq）再試 |
+| RAG 語意搜尋失敗 | NVIDIA API key 未填入 | 在前端 Settings → NVIDIA API Key 欄位填入 key（無 server-side 設定）|
 
 ---
 

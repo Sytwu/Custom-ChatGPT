@@ -102,23 +102,28 @@ export function useChat() {
       }
     }
 
-    // Auto-routing: ask backend to pick the best model for this message
+    // Auto-routing: rule-based first, then LLM-based
     let routedModel = null;
     if (state.autoRouting) {
-      try {
-        const routeBody = { message: trimmedText };
-        if (apiKey) routeBody.apiKey = apiKey;
-        const routeRes = await fetch(`${API_BASE}/api/route`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(routeBody),
-        });
-        if (routeRes.ok) {
-          const { modelId } = await routeRes.json();
-          if (modelId) routedModel = modelId;
+      if (attachment?.imageData) {
+        // Rule: image attached → always use a vision model
+        routedModel = "meta-llama/llama-4-scout-17b-16e-instruct";
+      } else {
+        try {
+          const routeBody = { message: trimmedText };
+          if (apiKey) routeBody.apiKey = apiKey;
+          const routeRes = await fetch(`${API_BASE}/api/route`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(routeBody),
+          });
+          if (routeRes.ok) {
+            const { modelId } = await routeRes.json();
+            if (modelId) routedModel = modelId;
+          }
+        } catch {
+          // Routing failed — fall back to state.model silently
         }
-      } catch {
-        // Routing failed — fall back to state.model silently
       }
     }
     dispatch({ type: ACTIONS.START_STREAM, payload: routedModel ?? state.model });
@@ -285,7 +290,11 @@ export function useChat() {
     }
 
     // 5. Stream
-    dispatch({ type: ACTIONS.START_STREAM, payload: state.model });
+    let routedModelBatch = null;
+    if (state.autoRouting && attachment?.imageData) {
+      routedModelBatch = "meta-llama/llama-4-scout-17b-16e-instruct";
+    }
+    dispatch({ type: ACTIONS.START_STREAM, payload: routedModelBatch ?? state.model });
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
@@ -295,7 +304,7 @@ export function useChat() {
         : "";
       const apiKey = state.groqApiKey;
       const body = {
-        model: state.model,
+        model: routedModelBatch ?? state.model,
         systemPrompt: memoryPrefixBatch + discordPrefix + ragPrefix + state.systemPrompt,
         messages: apiMessages,
         temperature: state.temperature,
