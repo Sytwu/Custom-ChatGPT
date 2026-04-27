@@ -105,6 +105,7 @@ export function MessageList({ onReply, pendingMessages = [] }) {
               ? state.streamingToolCalls[state.streamingToolCalls.length - 1].name
               : null
           }
+          streamingToolCalls={state.streamingToolCalls}
         />
       )}
       <div ref={bottomRef} />

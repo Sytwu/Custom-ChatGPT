@@ -7,36 +7,46 @@ const TOOL_ICONS = {
 };
 
 function ToolCallPair({ call, result }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const t = useT();
   const icon = TOOL_ICONS[call.name] ?? "🔧";
-  const inputSummary =
+
+  const headerLabel =
     call.name === "web_search"
       ? call.input?.query ?? ""
       : call.name === "python_execute"
-      ? (call.input?.code ?? "").split("\n")[0].slice(0, 60)
-      : JSON.stringify(call.input ?? {}).slice(0, 60);
+      ? "Python"
+      : call.name;
+
+  const inputDisplay =
+    call.name === "python_execute"
+      ? call.input?.code ?? ""
+      : JSON.stringify(call.input ?? {}, null, 2);
+
+  const isPending = !result;
 
   return (
     <div className="tool-call-pair">
       <button className="tool-call-header" onClick={() => setExpanded((v) => !v)}>
         <span className="tool-call-icon">{icon}</span>
         <span className="tool-call-name">{call.name}</span>
-        <span className="tool-call-summary">{inputSummary}</span>
+        <span className="tool-call-summary">{headerLabel}</span>
+        {isPending && <span className="tool-call-pending">⏳</span>}
         <span className="tool-call-toggle">{expanded ? t("toolCallsCollapse") : t("toolCallsExpand")}</span>
       </button>
       {expanded && (
         <div className="tool-call-body">
           <div className="tool-call-section">
             <span className="tool-call-label">Input</span>
-            <pre className="tool-call-pre">{JSON.stringify(call.input, null, 2)}</pre>
+            <pre className="tool-call-pre">{inputDisplay}</pre>
           </div>
-          {result && (
-            <div className="tool-call-section">
-              <span className="tool-call-label">Output</span>
-              <pre className="tool-call-pre">{result.output}</pre>
-            </div>
-          )}
+          <div className="tool-call-section">
+            <span className="tool-call-label">Output</span>
+            {isPending
+              ? <div className="tool-call-pending-output">⏳ {t("toolRunningCode")}...</div>
+              : <pre className="tool-call-pre">{result.output}</pre>
+            }
+          </div>
         </div>
       )}
     </div>
@@ -47,7 +57,7 @@ export function ToolCallBlock({ toolCalls }) {
   if (!toolCalls || toolCalls.length === 0) return null;
   const t = useT();
 
-  // Pair up calls and results
+  // Pair up calls and results — a trailing call with no result is shown as pending
   const pairs = [];
   let i = 0;
   while (i < toolCalls.length) {

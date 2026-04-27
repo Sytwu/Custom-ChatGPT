@@ -5,6 +5,48 @@ import { TOOLS_DEFINITION, executeTool } from "../services/tools/index.js";
 const router = Router();
 const MAX_TOOL_ROUNDS = 5;
 
+// llama-3.3-70b-versatile generates malformed XML-like tool calls and is rejected by Groq.
+// Use a model that reliably produces valid JSON tool calls for the agentic loop phase.
+const TOOL_CALL_MODEL = "llama-3.1-8b-instant";
+
+// Injected as the system prompt for the tool-decision phase only.
+// Overrides/prepends the user's system prompt so 8b reliably calls tools instead of answering from memory.
+const TOOL_LOOP_SYSTEM = `You are a tool-calling assistant. You MUST call the appropriate tool instead of answering from memory.
+
+MANDATORY rules:
+- Call python_execute for ANY calculation, math, algorithm, code execution, or data processing — even simple ones. NEVER compute manually.
+- Call web_search for ANY question about current events, news, prices, weather, real-time data, or anything that may have changed.
+- If the user says "用 Python", "計算", "compute", "calculate", "run code", "執行", you MUST call python_execute.
+- If the user says "今天", "最新", "現在", "目前", "latest", "current", "recently", you MUST call web_search.
+- When in doubt, call a tool. Never guess or answer from training data when a tool can help.`;
+
+// Models that support image array-content (vision format)
+const VISION_MODELS = new Set([
+  "meta-llama/llama-4-scout-17b-16e-instruct",
+  "meta-llama/llama-4-maverick-17b-128e-instruct",
+]);
+
+// Flatten OpenAI vision array-content to plain text
+const flattenArrayContent = (msgs) => msgs.map((msg) => {
+  if (!Array.isArray(msg.content)) return msg;
+  const text = msg.content.filter((p) => p.type === "text").map((p) => p.text).join("\n");
+  return { ...msg, content: text };
+});
+
+// Build messages for the tool-calling phase: inject TOOL_LOOP_SYSTEM as/before the system message.
+// This replaces the user's custom system prompt for this phase only, ensuring 8b reliably calls tools.
+function buildToolMessages(msgs) {
+  const flat = flattenArrayContent(msgs);
+  const hasSystem = flat.length > 0 && flat[0].role === "system";
+  if (hasSystem) {
+    return [
+      { role: "system", content: TOOL_LOOP_SYSTEM + "\n\n---\nAdditional context:\n" + flat[0].content },
+      ...flat.slice(1),
+    ];
+  }
+  return [{ role: "system", content: TOOL_LOOP_SYSTEM }, ...flat];
+}
+
 router.post("/stream", async (req, res, next) => {
   const {
     model,
@@ -92,7 +134,9 @@ router.post("/stream", async (req, res, next) => {
       while (rounds < MAX_TOOL_ROUNDS && !done) {
         let completion;
         try {
-          completion = await completeChatWithTools(streamMessages, model, TOOLS_DEFINITION, apiKey);
+          // Always use TOOL_CALL_MODEL (8b-instant): 70b generates malformed XML tool calls.
+          // buildToolMessages: flattens array content + injects TOOL_LOOP_SYSTEM so 8b reliably calls tools.
+          completion = await completeChatWithTools(buildToolMessages(streamMessages), TOOL_CALL_MODEL, TOOLS_DEFINITION, apiKey);
         } catch (toolErr) {
           // Groq rejects malformed tool calls (tool_use_failed) — fall back to streaming without tools
           console.warn("[chat/stream] tool call rejected, falling back to streaming:", toolErr.message);
@@ -105,8 +149,9 @@ router.post("/stream", async (req, res, next) => {
         const toolCalls = choice.message.tool_calls ?? [];
         if (toolCalls.length === 0) break;
 
-        // Add the assistant's tool-call message to the conversation
-        streamMessages = [...streamMessages, choice.message];
+        // Add the assistant's tool-call message; ensure content is always a string
+        const assistantMsg = { ...choice.message, content: choice.message.content ?? "" };
+        streamMessages = [...streamMessages, assistantMsg];
 
         for (const tc of toolCalls) {
           if (done) break;
@@ -138,7 +183,10 @@ router.post("/stream", async (req, res, next) => {
     }
 
     // Final streaming response
-    const stream = await streamChat(streamMessages, model, temperature, maxTokens, apiKey);
+    // Vision models keep array-content so they can see images;
+    // non-vision models must receive plain strings.
+    const msgsForStream = VISION_MODELS.has(model) ? streamMessages : flattenArrayContent(streamMessages);
+    const stream = await streamChat(msgsForStream, model, temperature, maxTokens, apiKey);
 
     for await (const chunk of stream) {
       if (done) break;

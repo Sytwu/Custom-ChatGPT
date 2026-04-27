@@ -22,7 +22,7 @@ export const TOOLS_DEFINITION = [
     function: {
       name: "python_execute",
       description:
-        "Execute Python 3 code and return stdout/stderr. Use for calculations, data processing, or tasks that benefit from running code.",
+        "Execute Python 3 code and return stdout/stderr. IMPORTANT: Always write the COMPLETE, self-contained Python script in ONE single call — never split code across multiple calls. Include ALL imports, helper functions, computations, and print statements together in one code string.",
       parameters: {
         type: "object",
         properties: {
